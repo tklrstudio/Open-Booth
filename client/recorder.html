@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fresh Rubber — Recorder</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700&family=DM+Mono:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080c0f;
+  --surface: #0d1317;
+  --surface2: #111920;
+  --border: #1e2d35;
+  --accent: #00d4ff;
+  --success: #39d98a;
+  --warn: #ffbb33;
+  --danger: #ff3b5c;
+  --text: #e8f4f8;
+  --muted: #4a6572;
+  --dim: #2a3d47;
+  --display: 'Barlow Condensed', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%; left: -20%;
+  width: 60%; height: 80%;
+  background: radial-gradient(ellipse, rgba(0,212,255,0.04) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.wrap {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 600px;
+  padding: 24px 20px 48px;
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.header {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.logo {
+  font-family: var(--display);
+  font-size: 36px; font-weight: 700;
+  letter-spacing: 4px; color: var(--text);
+  line-height: 1; text-transform: uppercase;
+}
+.logo span { color: var(--accent); }
+
+.session-id {
+  font-size: 10px; color: var(--muted);
+  letter-spacing: 1.5px; text-align: right; line-height: 1.8;
+}
+.session-id strong { color: var(--dim); display: block; font-size: 12px; letter-spacing: 2px; }
+
+/* NAME GATE */
+#nameGate {
+  display: flex; flex-direction: column; gap: 20px;
+  padding: 32px; border: 1px solid var(--border);
+  background: var(--surface);
+}
+.gate-title {
+  font-family: var(--display); font-size: 22px;
+  font-weight: 600; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--text);
+}
+.gate-sub {
+  font-size: 11px; color: var(--muted);
+  letter-spacing: 1px; line-height: 1.8; margin-top: -12px;
+}
+.name-row { display: flex; gap: 0; }
+.name-input {
+  flex: 1; background: var(--bg);
+  border: 1px solid var(--border); border-right: none;
+  color: var(--text); font-family: var(--mono);
+  font-size: 16px; padding: 12px 16px;
+  letter-spacing: 2px; outline: none; transition: border-color 0.2s;
+}
+.name-input:focus { border-color: var(--accent); }
+.name-input::placeholder { color: var(--muted); font-size: 13px; }
+.name-suffix {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-left: none; padding: 12px 14px;
+  font-size: 13px; color: var(--muted);
+  letter-spacing: 1px; display: flex; align-items: center;
+}
+.btn-join {
+  padding: 14px; background: var(--accent); border: none;
+  color: #000; font-family: var(--mono); font-size: 13px;
+  font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-join:hover { background: #33ddff; }
+.btn-join:disabled { background: var(--dim); color: var(--muted); cursor: not-allowed; }
+
+/* RECORDER MAIN */
+#recorderMain { display: none; flex-direction: column; gap: 12px; }
+
+.video-wrap {
+  position: relative; background: #000;
+  border: 1px solid var(--border); aspect-ratio: 16/9; overflow: hidden;
+}
+video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+.video-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,12,15,0.85);
+  font-size: 12px; color: var(--muted); letter-spacing: 2px;
+}
+.rec-pill {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(8,12,15,0.8);
+  border: 1px solid rgba(255,59,92,0.3);
+  padding: 5px 12px; font-size: 10px; letter-spacing: 2px;
+  opacity: 0; transition: opacity 0.4s; backdrop-filter: blur(4px);
+}
+.rec-pill.on { opacity: 1; }
+.rec-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--danger);
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.timer-pill {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(8,12,15,0.8); border: 1px solid var(--border);
+  padding: 5px 12px; font-size: 14px; letter-spacing: 3px;
+  opacity: 0; transition: opacity 0.4s; backdrop-filter: blur(4px);
+}
+.timer-pill.on { opacity: 1; }
+.participant-tag {
+  position: absolute; bottom: 12px; left: 12px;
+  background: rgba(8,12,15,0.8); border: 1px solid var(--border);
+  padding: 4px 10px; font-size: 11px; letter-spacing: 2px;
+  color: var(--accent); backdrop-filter: blur(4px);
+}
+
+/* REDUNDANCY PANEL */
+.r-panel {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.r-layer { background: var(--surface); padding: 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+.r-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.r-value { font-size: 20px; font-family: var(--display); font-weight: 600; letter-spacing: 1px; color: var(--text); line-height: 1; }
+.r-sub   { font-size: 9px; letter-spacing: 1px; }
+.r-sub.ok   { color: var(--success); }
+.r-sub.warn { color: var(--warn); }
+.r-sub.err  { color: var(--danger); }
+.r-sub.dim  { color: var(--muted); }
+.r-bar  { height: 2px; background: var(--dim); margin-top: 4px; }
+.r-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.6s ease; }
+.r-fill.warn { background: var(--warn); }
+.r-fill.err  { background: var(--danger); }
+
+/* STATUS STRIP */
+.s-strip { display: flex; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.s-cell  { flex: 1; background: var(--surface); padding: 10px 12px; }
+.s-lbl   { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.s-val   { font-size: 11px; color: var(--dim); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-val.ok   { color: var(--success); }
+.s-val.warn { color: var(--warn); }
+.s-val.err  { color: var(--danger); }
+
+/* CONTROLS */
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn {
+  padding: 15px; font-family: var(--mono); font-size: 12px;
+  font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); cursor: not-allowed; transition: all 0.15s; outline: none;
+}
+.btn.go   { border-color: var(--accent); color: var(--accent); cursor: pointer; }
+.btn.go:hover { background: var(--accent); color: #000; }
+.btn.stop { border-color: var(--danger); color: var(--danger); cursor: pointer; }
+.btn.stop:hover { background: var(--danger); color: #fff; }
+.btn.rescue {
+  border-color: var(--warn); color: var(--warn); cursor: pointer;
+  grid-column: span 2; font-size: 11px; display: none;
+}
+.btn.rescue:hover { background: var(--warn); color: #000; }
+
+/* LOG */
+.log-wrap { border: 1px solid var(--border); background: var(--surface); }
+.log-hdr  {
+  padding: 8px 12px; font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+}
+.log { padding: 8px; max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.log-entry { display: flex; gap: 10px; font-size: 10px; letter-spacing: 0.5px; line-height: 1.5; }
+.log-entry .ts { color: var(--dim); flex-shrink: 0; }
+.log-entry.ok   .msg { color: var(--success); }
+.log-entry.warn .msg { color: var(--warn); }
+.log-entry.err  .msg { color: var(--danger); }
+.log-entry.info .msg { color: var(--muted); }
+.log::-webkit-scrollbar { width: 3px; }
+.log::-webkit-scrollbar-thumb { background: var(--dim); }
+
+/* NOTICE */
+.notice {
+  border: 1px solid #1a2a1a; background: #0d1a0d;
+  padding: 14px 16px; font-size: 10px; color: var(--muted);
+  letter-spacing: 0.5px; line-height: 2;
+}
+.notice strong { color: var(--warn); }
+.notice code { color: var(--accent); background: rgba(0,212,255,0.08); padding: 1px 5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo">Fresh<span>.</span>Rubber</div>
+    <div class="session-id"><strong id="sessionDisplay">—</strong>SESSION</div>
+  </div>
+
+  <div id="nameGate">
+    <div class="gate-title">Who are you?</div>
+    <div class="gate-sub">Enter your name. A unique suffix is added automatically — no coordination needed.</div>
+    <div class="name-row">
+      <input class="name-input" id="nameInput" type="text" placeholder="Jason  /  Gav  /  Guest name" maxlength="20" autocomplete="off" spellcheck="false" />
+      <div class="name-suffix" id="nameSuffix">-????</div>
+    </div>
+    <button class="btn-join" id="btnJoin" disabled>Join Session →</button>
+  </div>
+
+  <div id="recorderMain">
+    <div class="video-wrap">
+      <video id="preview" autoplay muted playsinline></video>
+      <div class="video-overlay" id="videoOverlay">Initialising camera...</div>
+      <div class="rec-pill" id="recPill"><div class="rec-dot"></div> REC</div>
+      <div class="timer-pill" id="timerPill">00:00:00</div>
+      <div class="participant-tag" id="participantTag">—</div>
+    </div>
+
+    <div class="r-panel">
+      <div class="r-layer">
+        <div class="r-label">Server Chunks</div>
+        <div class="r-value" id="rSrvN">0</div>
+        <div class="r-sub dim" id="rSrvSub">waiting</div>
+        <div class="r-bar"><div class="r-fill" id="rSrvFill"></div></div>
+      </div>
+      <div class="r-layer">
+        <div class="r-label">Local Cache</div>
+        <div class="r-value" id="rIdbN">0</div>
+        <div class="r-sub dim" id="rIdbSub">waiting</div>
+        <div class="r-bar"><div class="r-fill" id="rIdbFill"></div></div>
+      </div>
+      <div class="r-layer">
+        <div class="r-label">Recorded</div>
+        <div class="r-value" id="rTotN">0</div>
+        <div class="r-sub dim" id="rTotSub">chunks</div>
+        <div class="r-bar"><div class="r-fill" id="rTotFill" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="s-strip">
+      <div class="s-cell"><div class="s-lbl">Camera</div><div class="s-val" id="camVal">—</div></div>
+      <div class="s-cell"><div class="s-lbl">Microphone</div><div class="s-val" id="micVal">—</div></div>
+      <div class="s-cell"><div class="s-lbl">Network</div><div class="s-val" id="netVal">—</div></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="btnStart">Start Recording</button>
+      <button class="btn" id="btnStop">Stop</button>
+      <button class="btn rescue" id="btnRescue">⬇ Download Local Cache (Rescue)</button>
+    </div>
+
+    <div class="log-wrap">
+      <div class="log-hdr"><span>Activity Log</span><span id="logCt">0 events</span></div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="notice" id="cfgNotice">
+      <strong>⚠ No upload endpoint configured.</strong>
+      Set <code>UPLOAD_ENDPOINT</code> at the top of the script.
+      Local cache (IndexedDB) is active — use Rescue after recording.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════
+const UPLOAD_ENDPOINT   = 'https://recorder.tklrstudio.com/upload';
+const SERVER_CHUNK_MS   = 10000;   // 10s — server upload cadence
+const IDB_CHUNK_MS      = 30000;   // 30s — local cache cadence
+const SERVER_VIDEO_KBPS = 800;     // degraded for upload
+const LOCAL_VIDEO_KBPS  = 4000;    // full quality for cache
+// ═══════════════════════════════════════════════
+
+// Session
+const params    = new URLSearchParams(location.search);
+let sessionId   = params.get('session');
+if (!sessionId) {
+  sessionId = genSessionId();
+  const u = new URL(location.href);
+  u.searchParams.set('session', sessionId);
+  history.replaceState({}, '', u);
+}
+document.getElementById('sessionDisplay').textContent = sessionId;
+
+// Random suffix for participant ID
+const SUFFIX = '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+document.getElementById('nameSuffix').textContent = SUFFIX;
+
+// State
+let stream, serverRec, idbRec, db;
+let participantId   = null;
+let srvChunkIdx     = 0;
+let idbChunkIdx     = 0;
+let srvUploaded     = 0;
+let idbSaved        = 0;
+let totalChunks     = 0;
+let srvInitSegment  = null;  // init segment for server chunks
+let idbInitSegment  = null;  // init segment for IDB chunks
+let srvRecStartIdx  = 0;     // chunk index when current recording started
+let idbRecStartIdx  = 0;     // chunk index when current recording started
+let timerIv         = null;
+let startTime       = null;
+let isRecording     = false;
+let logCt           = 0;
+
+// ── NAME GATE ─────────────────────────────────
+const nameInput = document.getElementById('nameInput');
+const btnJoin   = document.getElementById('btnJoin');
+
+nameInput.addEventListener('input', () => {
+  btnJoin.disabled = nameInput.value.trim().length < 1;
+});
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !btnJoin.disabled) doJoin();
+});
+btnJoin.addEventListener('click', doJoin);
+
+function doJoin() {
+  const raw = nameInput.value.trim().replace(/[^a-zA-Z0-9_-]/g, '') || 'participant';
+  participantId = raw + SUFFIX;
+  document.getElementById('nameGate').style.display = 'none';
+  document.getElementById('recorderMain').style.display = 'flex';
+  document.getElementById('participantTag').textContent = participantId;
+  log('info', `Joined as ${participantId}`);
+  initMedia();
+}
+
+// ── INDEXEDDB ────────────────────────────────
+async function openIDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('FRRecorder_v2', 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('chunks'))
+        d.createObjectStore('chunks', { keyPath: 'key' });
+    };
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function idbPut(key, obj) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('chunks', 'readwrite');
+    tx.objectStore('chunks').put({ key, ...obj }).onsuccess = res;
+    tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function idbGetAll() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('chunks', 'readonly');
+    const r  = tx.objectStore('chunks').getAll();
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = e => rej(e.target.error);
+  });
+}
+
+window.clearCache = async () => {
+  const tx = db.transaction('chunks', 'readwrite');
+  tx.objectStore('chunks').clear();
+  log('ok', 'Local cache cleared');
+};
+
+// ── MEDIA ────────────────────────────────────
+async function initMedia() {
+  log('info', 'Requesting camera and microphone...');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000 },
+      video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }
+    });
+
+    document.getElementById('preview').srcObject = stream;
+    document.getElementById('videoOverlay').style.display = 'none';
+
+    const at = stream.getAudioTracks()[0];
+    const vt = stream.getVideoTracks()[0];
+    sv('camVal', vt ? trunc(vt.label, 26) : 'None', vt ? 'ok':'err');
+    sv('micVal', at ? trunc(at.label, 26) : 'None', at ? 'ok':'err');
+    sv('netVal',  navigator.onLine ? 'Online' : 'Offline', navigator.onLine ? 'ok':'warn');
+
+    db = await openIDB();
+    log('ok', 'Local cache ready');
+
+    // Check for orphaned chunks
+    const all  = await idbGetAll();
+    const mine = all.filter(c => c.session === sessionId && c.participant === participantId);
+    if (mine.length) {
+      log('warn', `${mine.length} unsaved chunks found from previous session`);
+      showRescue();
+    }
+
+    if (UPLOAD_ENDPOINT) document.getElementById('cfgNotice').style.display = 'none';
+
+    setBtn('btnStart', 'go', startRecording, 'Start Recording');
+    log('ok', 'Ready');
+
+  } catch (err) {
+    document.getElementById('videoOverlay').textContent = 'Permission denied';
+    sv('camVal','Error','err'); sv('micVal','Error','err');
+    log('err', `Media: ${err.message}`);
+  }
+
+  window.addEventListener('online',  () => { sv('netVal','Online','ok');    log('ok',   'Network restored'); });
+  window.addEventListener('offline', () => { sv('netVal','Offline','warn'); log('warn', 'Network lost — cache active'); });
+}
+
+// ── RECORDING ────────────────────────────────
+async function startRecording() {
+  const mime = getBestMime();
+  if (!mime) { log('err', 'No supported codec'); return; }
+
+  isRecording = true; startTime = Date.now();
+  // Don't reset chunk indices - they should increment across start/stop cycles
+  // Don't reset counters - accumulate totals for the entire session
+  // But track where this recording started so we can detect the new init segment
+  srvRecStartIdx = srvChunkIdx;
+  idbRecStartIdx = idbChunkIdx;
+
+  serverRec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: SERVER_VIDEO_KBPS * 1000, audioBitsPerSecond: 128000 });
+  idbRec    = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: LOCAL_VIDEO_KBPS  * 1000, audioBitsPerSecond: 192000 });
+
+  serverRec.ondataavailable = e => { if (e.data?.size > 0) onServerChunk(e.data); };
+  idbRec.ondataavailable    = e => { if (e.data?.size > 0) onIdbChunk(e.data); };
+  serverRec.onerror = e => log('err', `Server rec: ${e.error?.message}`);
+  idbRec.onerror    = e => log('err', `Cache rec: ${e.error?.message}`);
+  idbRec.onstop     = finalise;
+
+  serverRec.start(SERVER_CHUNK_MS);
+  idbRec.start(IDB_CHUNK_MS);
+
+  document.getElementById('recPill').classList.add('on');
+  document.getElementById('timerPill').classList.add('on');
+  setBtn('btnStart', '', null, 'Start Recording');
+  setBtn('btnStop', 'stop', stopRecording, 'Stop');
+  timerIv = setInterval(tickTimer, 1000);
+  log('ok', `Recording — dual encoder active (${SERVER_VIDEO_KBPS}kbps server / ${LOCAL_VIDEO_KBPS}kbps cache)`);
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  setBtn('btnStop', '', null, 'Stop');
+  if (serverRec?.state !== 'inactive') serverRec.stop();
+  if (idbRec?.state   !== 'inactive') idbRec.stop();
+  clearInterval(timerIv);
+  document.getElementById('recPill').classList.remove('on');
+}
+
+function finalise() {
+  log('ok', 'Recording complete');
+  setBtn('btnStart', 'go', startRecording, 'New Recording');
+  showRescue();
+  updateUI();
+}
+
+// ── CHUNK HANDLING ────────────────────────────
+async function onServerChunk(blob) {
+  const idx  = srvChunkIdx++;
+  const name = `${sessionId}_${participantId}_srv_${pad4(idx)}.${ext(blob.type)}`;
+
+  // Capture init segment (first chunk of this recording) but don't upload it
+  if (idx === srvRecStartIdx) {
+    srvInitSegment = blob;
+    log('ok', `[server] Init segment captured (${fmtSz(blob.size)})`);
+    return;
+  }
+  
+  totalChunks++;
+  updateUI();
+  
+  // Prepend init segment to all data chunks
+  const uploadBlob = srvInitSegment
+    ? new Blob([srvInitSegment, blob], { type: blob.type })
+    : blob;
+
+  if (!UPLOAD_ENDPOINT) { log('info', `[server] No endpoint — chunk ${idx} skipped`); return; }
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const fd = new FormData();
+      fd.append('chunk', uploadBlob, name);
+      fd.append('session', sessionId);
+      fd.append('participant', participantId);
+      fd.append('index', idx);
+      fd.append('filename', name);
+      fd.append('ts', Date.now());
+      const r = await fetch(UPLOAD_ENDPOINT, { method: 'POST', body: fd });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      srvUploaded++;
+      log('ok', `[server] ↑ chunk ${idx} (${fmtSz(uploadBlob.size)})`);
+      updateUI();
+      return;
+    } catch (e) {
+      if (attempt < 3) { log('warn', `[server] chunk ${idx} retry ${attempt}...`); await sleep(1500 * attempt); }
+      else { log('err', `[server] chunk ${idx} failed — cache covers it`); sv('netVal','Upload errors','warn'); }
+    }
+  }
+}
+
+async function onIdbChunk(blob) {
+  const idx  = idbChunkIdx++;
+  const name = `${sessionId}_${participantId}_local_${pad4(idx)}.${ext(blob.type)}`;
+  try {
+    // Capture init segment (first chunk of this recording) but don't save it
+    if (idx === idbRecStartIdx) {
+      idbInitSegment = blob;
+      log('ok', `[cache] Init segment captured (${fmtSz(blob.size)})`);
+      return;
+    }
+    
+    // Prepend init segment to all data chunks
+    const saveBlob = idbInitSegment
+      ? new Blob([idbInitSegment, blob], { type: blob.type })
+      : blob;
+    
+    // Store Blob directly - no arrayBuffer conversion needed
+    await idbPut(name, { 
+      session: sessionId, 
+      participant: participantId, 
+      index: idx, 
+      type: blob.type, 
+      size: saveBlob.size, 
+      data: saveBlob,  // Store Blob directly
+      ts: Date.now() 
+    });
+    idbSaved++;
+    log('ok', `[cache] Chunk ${idx} saved (${fmtSz(saveBlob.size)})`);
+    updateUI();
+  } catch (e) {
+    log('err', `[cache] Chunk ${idx}: ${e.message}`);
+  }
+}
+
+// ── RESCUE ────────────────────────────────────
+function showRescue() {
+  const btn = document.getElementById('btnRescue');
+  btn.style.display = 'block';
+  btn.onclick = doRescue;
+}
+
+async function doRescue() {
+  const all  = await idbGetAll();
+  const mine = all.filter(c => c.session === sessionId && c.participant === participantId).sort((a,b) => a.index - b.index);
+  if (!mine.length) { log('warn', 'Nothing in local cache for this session'); return; }
+  log('info', `Downloading ${mine.length} chunks from cache...`);
+  for (const c of mine) {
+    dlBlob(new Blob([c.data], { type: c.type }), c.key);
+    await sleep(250);
+  }
+  log('ok', `Done — ${mine.length} chunks downloaded`);
+  log('info', 'Call clearCache() in console when safe to clear');
+}
+
+// ── UI ────────────────────────────────────────
+function updateUI() {
+  document.getElementById('rSrvN').textContent = srvUploaded;
+  document.getElementById('rIdbN').textContent = idbSaved;
+  document.getElementById('rTotN').textContent = totalChunks;
+
+  const srvPct = totalChunks ? (srvUploaded / totalChunks) * 100 : 0;
+  setFill('rSrvFill', srvPct, UPLOAD_ENDPOINT ? (srvPct < 50 ? 'warn':'') : 'warn');
+  setFill('rIdbFill', idbSaved > 0 ? 100 : 0, '');
+  setFill('rTotFill', 100, '');
+
+  setSub('rSrvSub', UPLOAD_ENDPOINT ? `${srvUploaded} uploaded` : 'no endpoint', UPLOAD_ENDPOINT ? 'ok':'warn');
+  setSub('rIdbSub', idbSaved ? `${idbSaved} saved` : 'waiting', idbSaved ? 'ok':'dim');
+  setSub('rTotSub', `${totalChunks} total`, '');
+}
+
+function setFill(id, pct, cls) {
+  const el = document.getElementById(id);
+  el.style.width = pct + '%';
+  el.className   = 'r-fill' + (cls ? ' '+cls : '');
+}
+
+function setSub(id, txt, cls) {
+  const el = document.getElementById(id);
+  el.textContent = txt;
+  el.className   = 'r-sub ' + (cls || 'dim');
+}
+
+function sv(id, txt, cls) {
+  const el = document.getElementById(id);
+  el.textContent = txt;
+  el.className   = 's-val' + (cls ? ' '+cls : '');
+}
+
+function setBtn(id, cls, handler, label) {
+  const el = document.getElementById(id);
+  if (label) el.textContent = label;
+  el.className = 'btn' + (cls ? ' '+cls : '');
+  el.onclick   = handler;
+}
+
+function tickTimer() {
+  const s = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById('timerPill').textContent =
+    `${p2(Math.floor(s/3600))}:${p2(Math.floor((s%3600)/60))}:${p2(s%60)}`;
+}
+
+function log(type, msg) {
+  const now = new Date();
+  const ts  = `${p2(now.getHours())}:${p2(now.getMinutes())}:${p2(now.getSeconds())}`;
+  const el  = document.createElement('div');
+  el.className = `log-entry ${type}`;
+  el.innerHTML = `<span class="ts">${ts}</span><span class="msg">${escHtml(msg)}</span>`;
+  const lg = document.getElementById('log');
+  lg.appendChild(el);
+  lg.scrollTop = lg.scrollHeight;
+  document.getElementById('logCt').textContent = `${++logCt} events`;
+}
+
+// ── UTILS ─────────────────────────────────────
+function getBestMime() {
+  return ['video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=h264,opus','video/webm;codecs=vp9,opus','video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || null;
+}
+function ext(mime) { return mime.startsWith('video/mp4') ? 'mp4' : 'webm'; }
+function genSessionId() { return 'FR-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
+function pad4(n) { return String(n).padStart(4,'0'); }
+function p2(n)   { return String(n).padStart(2,'0'); }
+function fmtSz(b){ return b < 1048576 ? `${(b/1024).toFixed(0)}KB` : `${(b/1048576).toFixed(1)}MB`; }
+function trunc(s,n){ return s.length > n ? s.slice(0,n)+'…' : s; }
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+function dlBlob(blob, name) {
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+</script>
+</body>
+</html>

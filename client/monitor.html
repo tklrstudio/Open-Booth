@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Booth — Monitor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700&family=DM+Mono:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080c0f;
+  --surface: #0d1317;
+  --border: #1e2d35;
+  --accent: #00d4ff;
+  --success: #39d98a;
+  --warn: #ffbb33;
+  --danger: #ff3b5c;
+  --text: #e8f4f8;
+  --muted: #4a6572;
+  --dim: #2a3d47;
+  --display: 'Barlow Condensed', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--mono); min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0; position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed; top: -30%; right: -20%;
+  width: 50%; height: 60%;
+  background: radial-gradient(ellipse, rgba(57,217,138,0.03) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.wrap {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 900px;
+  padding: 24px 20px 48px;
+}
+
+/* HEADER */
+.header {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.logo {
+  font-family: var(--display); font-size: 36px;
+  font-weight: 700; letter-spacing: 4px;
+  color: var(--text); line-height: 1; text-transform: uppercase;
+}
+.logo span { color: var(--accent); }
+
+.header-right { text-align: right; }
+
+.session-lbl {
+  font-size: 10px; color: var(--muted); letter-spacing: 2px;
+}
+.session-val {
+  font-size: 14px; color: var(--text); letter-spacing: 2px;
+  font-family: var(--display); font-weight: 600;
+}
+
+.poll-status {
+  font-size: 10px; letter-spacing: 1px;
+  margin-top: 4px;
+}
+.poll-status.ok   { color: var(--success); }
+.poll-status.warn { color: var(--warn); }
+.poll-status.err  { color: var(--danger); }
+
+/* SESSION SUMMARY BAR */
+.summary-bar {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); margin-bottom: 20px;
+}
+.sum-cell { background: var(--surface); padding: 14px 16px; }
+.sum-lbl  { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.sum-val  { font-family: var(--display); font-size: 28px; font-weight: 600; line-height: 1; color: var(--text); }
+.sum-sub  { font-size: 9px; letter-spacing: 1px; color: var(--muted); margin-top: 4px; }
+.sum-val.ok   { color: var(--success); }
+.sum-val.warn { color: var(--warn); }
+.sum-val.err  { color: var(--danger); }
+
+/* PARTICIPANT CARDS */
+.participants { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+.p-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.p-card.active  { border-color: rgba(57,217,138,0.4); }
+.p-card.stale   { border-color: rgba(255,187,51,0.4); }
+.p-card.offline { border-color: rgba(255,59,92,0.2); }
+
+.p-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.p-name {
+  font-family: var(--display); font-size: 20px;
+  font-weight: 600; letter-spacing: 2px; color: var(--text);
+}
+
+.p-badge {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 3px 8px; border: 1px solid;
+}
+.p-badge.recording { color: var(--success); border-color: rgba(57,217,138,0.4); animation: badgePulse 2s infinite; }
+.p-badge.stale     { color: var(--warn);    border-color: rgba(255,187,51,0.4); }
+.p-badge.stopped   { color: var(--muted);   border-color: var(--border); }
+
+@keyframes badgePulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+.p-metrics {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 1px; background: var(--border);
+}
+.p-metric { background: var(--surface); padding: 10px 12px; }
+.p-mlbl   { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.p-mval   { font-size: 14px; letter-spacing: 1px; color: var(--text); }
+.p-mval.ok   { color: var(--success); }
+.p-mval.warn { color: var(--warn); }
+.p-mval.err  { color: var(--danger); }
+.p-mval.dim  { color: var(--dim); }
+
+/* Upload bar */
+.p-bar-wrap { padding: 0 16px 12px; }
+.p-bar-lbl  { font-size: 9px; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; display: flex; justify-content: space-between; }
+.p-bar      { height: 2px; background: var(--dim); }
+.p-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.8s ease; }
+.p-bar-fill.warn { background: var(--warn); }
+.p-bar-fill.err  { background: var(--danger); }
+
+/* NO PARTICIPANTS */
+.empty-state {
+  border: 1px solid var(--border); background: var(--surface);
+  padding: 48px; text-align: center;
+}
+.empty-title { font-family: var(--display); font-size: 22px; letter-spacing: 3px; color: var(--muted); margin-bottom: 10px; }
+.empty-sub   { font-size: 11px; color: var(--dim); letter-spacing: 1px; line-height: 2; }
+
+/* ACTIVITY LOG */
+.log-section { border: 1px solid var(--border); background: var(--surface); }
+.log-hdr {
+  padding: 8px 14px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+}
+.log { padding: 8px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.log-entry { display: flex; gap: 10px; font-size: 10px; letter-spacing: 0.5px; line-height: 1.5; }
+.log-entry .ts { color: var(--dim); flex-shrink: 0; }
+.log-entry.ok   .msg { color: var(--success); }
+.log-entry.warn .msg { color: var(--warn); }
+.log-entry.err  .msg { color: var(--danger); }
+.log-entry.info .msg { color: var(--muted); }
+.log::-webkit-scrollbar { width: 3px; }
+.log::-webkit-scrollbar-thumb { background: var(--dim); }
+
+/* NOTICE */
+.notice {
+  border: 1px solid #2a1a00; background: #1a0f00;
+  padding: 14px 16px; font-size: 10px; color: var(--muted);
+  letter-spacing: 0.5px; line-height: 2; margin-top: 12px;
+}
+.notice strong { color: var(--warn); }
+.notice code { color: var(--accent); background: rgba(0,212,255,0.08); padding: 1px 5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo">Open Booth <span style="color:var(--muted);font-size:22px;letter-spacing:2px">// MONITOR</span></div>
+    <div class="header-right">
+      <div class="session-lbl">SESSION</div>
+      <div class="session-val" id="sessionVal">—</div>
+      <div class="poll-status" id="pollStatus">Initialising...</div>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <div class="sum-cell">
+      <div class="sum-lbl">Participants</div>
+      <div class="sum-val" id="sumParticipants">0</div>
+      <div class="sum-sub">connected</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-lbl">Recording</div>
+      <div class="sum-val" id="sumRecording">0</div>
+      <div class="sum-sub">active</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-lbl">Total Chunks</div>
+      <div class="sum-val" id="sumChunks">0</div>
+      <div class="sum-sub">uploaded</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-lbl">Session Time</div>
+      <div class="sum-val" id="sumTime">—</div>
+      <div class="sum-sub">elapsed</div>
+    </div>
+  </div>
+
+  <div class="participants" id="participants">
+    <div class="empty-state">
+      <div class="empty-title">Waiting for participants</div>
+      <div class="empty-sub">
+        Send the recorder URL to each participant.<br>
+        They'll appear here once they start recording.
+      </div>
+    </div>
+  </div>
+
+  <div class="log-section">
+    <div class="log-hdr"><span>Monitor Log</span><span id="logCt">0 events</span></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="notice" id="cfgNotice">
+    <strong>⚠ No session state URL configured.</strong>
+    Set <code>SESSION_STATE_URL</code> at the top of the script to enable live monitoring.
+    In offline mode, this page shows demo data.
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════
+const SESSION_STATE_URL = null; // Set to 'http://YOUR_IP/session-state' after VPS setup
+const POLL_INTERVAL_MS  = 5000; // poll every 5s
+const STALE_THRESHOLD_S = 30;   // warn if no chunk in 30s
+const DEAD_THRESHOLD_S  = 90;   // error if no chunk in 90s
+// ═══════════════════════════════════════════════
+
+const params    = new URLSearchParams(location.search);
+const sessionId = params.get('session') || 'DEMO';
+document.getElementById('sessionVal').textContent = sessionId;
+
+let sessionStart   = null;
+let participants   = {};  // participantId -> state
+let logCt          = 0;
+let pollFails      = 0;
+let timerIv        = null;
+
+if (SESSION_STATE_URL) {
+  document.getElementById('cfgNotice').style.display = 'none';
+  startPolling();
+  log('info', `Monitoring session ${sessionId}`);
+} else {
+  log('warn', 'No state URL — running in demo mode');
+  loadDemoData();
+}
+
+// ── POLLING ──────────────────────────────────
+function startPolling() {
+  poll();
+  setInterval(poll, POLL_INTERVAL_MS);
+}
+
+async function poll() {
+  try {
+    const url = `${SESSION_STATE_URL}?session=${encodeURIComponent(sessionId)}&t=${Date.now()}`;
+    const r   = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    pollFails  = 0;
+    setPollStatus('ok', `Live · updated ${now()}`);
+    ingestState(data);
+  } catch (e) {
+    pollFails++;
+    if (pollFails >= 3) {
+      setPollStatus('err', `Poll failed (${pollFails}x) — ${e.message}`);
+      log('err', `Poll failed: ${e.message}`);
+    } else {
+      setPollStatus('warn', `Retrying... (${pollFails}/3)`);
+    }
+  }
+}
+
+// ── STATE INGESTION ───────────────────────────
+function ingestState(data) {
+  /*
+  Expected server JSON shape:
+  {
+    session: "OB-20260306-A3BX",
+    startedAt: 1709712000000,  // ms timestamp
+    participants: {
+      "Alice-4F2X": {
+        lastChunkAt: 1709712345000,
+        chunksUploaded: 12,
+        totalBytes: 48234567,
+        duration: 120,         // seconds recorded
+        errors: 0
+      },
+      ...
+    }
+  }
+  */
+  if (data.startedAt && !sessionStart) {
+    sessionStart = data.startedAt;
+    if (!timerIv) timerIv = setInterval(updateSessionTimer, 1000);
+  }
+
+  const incoming = data.participants || {};
+
+  // Detect new participants
+  for (const [id, state] of Object.entries(incoming)) {
+    if (!participants[id]) {
+      log('ok', `${id} joined the session`);
+    }
+    participants[id] = { ...state, id };
+  }
+
+  renderParticipants();
+  updateSummary();
+}
+
+// ── RENDER ─────────────────────────────────────
+function renderParticipants() {
+  const el   = document.getElementById('participants');
+  const ids  = Object.keys(participants);
+
+  if (ids.length === 0) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-title">Waiting for participants</div>
+      <div class="empty-sub">Send the recorder URL to each participant.<br>They'll appear here once they start recording.</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = '';
+  for (const id of ids) {
+    el.appendChild(buildCard(participants[id]));
+  }
+}
+
+function buildCard(p) {
+  const now      = Date.now();
+  const secSince = p.lastChunkAt ? Math.floor((now - p.lastChunkAt) / 1000) : 999;
+  const status   = secSince < STALE_THRESHOLD_S ? 'active' : secSince < DEAD_THRESHOLD_S ? 'stale' : 'offline';
+
+  const card = document.createElement('div');
+  card.className = `p-card ${status}`;
+
+  const badgeLabel = status === 'active' ? 'Recording' : status === 'stale' ? 'Slow upload' : 'Offline / Stopped';
+  const badgeCls   = status === 'active' ? 'recording' : status === 'stale' ? 'stale' : 'stopped';
+
+  const duration = p.duration ? fmtDuration(p.duration) : '—';
+  const lastSeen = p.lastChunkAt ? `${secSince}s ago` : 'never';
+  const size     = p.totalBytes  ? fmtSz(p.totalBytes)  : '—';
+  const errCls   = p.errors > 0  ? 'warn' : 'ok';
+
+  const uploadPct = Math.min(100, (p.chunksUploaded || 0) * 4); // rough viz
+  const barCls    = status === 'active' ? '' : status === 'stale' ? 'warn' : 'err';
+
+  card.innerHTML = `
+    <div class="p-header">
+      <div class="p-name">${escHtml(p.id)}</div>
+      <div class="p-badge ${badgeCls}">${badgeLabel}</div>
+    </div>
+    <div class="p-metrics">
+      <div class="p-metric"><div class="p-mlbl">Duration</div><div class="p-mval">${duration}</div></div>
+      <div class="p-metric"><div class="p-mlbl">Chunks</div><div class="p-mval ${status === 'active' ? 'ok':'dim'}">${p.chunksUploaded || 0}</div></div>
+      <div class="p-metric"><div class="p-mlbl">Size</div><div class="p-mval">${size}</div></div>
+      <div class="p-metric"><div class="p-mlbl">Last chunk</div><div class="p-mval ${status === 'active' ? 'ok': status === 'stale' ? 'warn':'err'}">${lastSeen}</div></div>
+      <div class="p-metric"><div class="p-mlbl">Errors</div><div class="p-mval ${errCls}">${p.errors || 0}</div></div>
+    </div>
+    <div class="p-bar-wrap">
+      <div class="p-bar-lbl"><span>Upload activity</span><span>${p.chunksUploaded || 0} chunks</span></div>
+      <div class="p-bar"><div class="p-bar-fill ${barCls}" style="width:${uploadPct}%"></div></div>
+    </div>
+  `;
+  return card;
+}
+
+function updateSummary() {
+  const pids      = Object.keys(participants);
+  const now       = Date.now();
+  const recording = pids.filter(id => {
+    const p = participants[id];
+    return p.lastChunkAt && (now - p.lastChunkAt) < STALE_THRESHOLD_S * 1000;
+  });
+  const totalChunks = pids.reduce((s, id) => s + (participants[id].chunksUploaded || 0), 0);
+
+  setSum('sumParticipants', pids.length,         pids.length > 0 ? 'ok':'');
+  setSum('sumRecording',    recording.length,     recording.length > 0 ? 'ok':'warn');
+  setSum('sumChunks',       totalChunks,          totalChunks > 0 ? 'ok':'');
+}
+
+function setSum(id, val, cls) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.className   = 'sum-val' + (cls ? ' '+cls : '');
+}
+
+function updateSessionTimer() {
+  if (!sessionStart) return;
+  const s = Math.floor((Date.now() - sessionStart) / 1000);
+  document.getElementById('sumTime').textContent = fmtDuration(s);
+}
+
+// ── DEMO DATA ─────────────────────────────────
+function loadDemoData() {
+  sessionStart = Date.now() - 1800000; // 30 mins ago
+  timerIv = setInterval(updateSessionTimer, 1000);
+
+  participants = {
+    'Alice-4F2X': { id: 'Alice-4F2X', lastChunkAt: Date.now() - 8000, chunksUploaded: 18, totalBytes: 72 * 1024 * 1024, duration: 1800, errors: 0 },
+    'Bob-9KL3':   { id: 'Bob-9KL3',   lastChunkAt: Date.now() - 45000, chunksUploaded: 15, totalBytes: 58 * 1024 * 1024, duration: 1800, errors: 2 },
+  };
+
+  setPollStatus('warn', 'Demo mode — no live data');
+  ingestState({ session: sessionId, startedAt: sessionStart, participants });
+  log('info', 'Demo data loaded — Bob shows a stale upload to demonstrate warning state');
+  updateSummary();
+
+  // Simulate live updates in demo mode
+  setInterval(() => {
+    if (participants['Alice-4F2X']) {
+      participants['Alice-4F2X'].lastChunkAt  = Date.now() - Math.random() * 12000;
+      participants['Alice-4F2X'].chunksUploaded++;
+      participants['Alice-4F2X'].totalBytes  += 4 * 1024 * 1024;
+      participants['Alice-4F2X'].duration    += 10;
+    }
+    renderParticipants();
+    updateSummary();
+  }, 10000);
+}
+
+// ── UTILS ─────────────────────────────────────
+function setPollStatus(cls, msg) {
+  const el = document.getElementById('pollStatus');
+  el.textContent = msg;
+  el.className   = `poll-status ${cls}`;
+}
+
+function log(type, msg) {
+  const el  = document.createElement('div');
+  el.className = `log-entry ${type}`;
+  el.innerHTML = `<span class="ts">${now()}</span><span class="msg">${escHtml(msg)}</span>`;
+  const lg = document.getElementById('log');
+  lg.appendChild(el);
+  lg.scrollTop = lg.scrollHeight;
+  document.getElementById('logCt').textContent = `${++logCt} events`;
+}
+
+function fmtDuration(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function fmtSz(b) {
+  if (b < 1048576) return `${(b/1024).toFixed(0)}KB`;
+  if (b < 1073741824) return `${(b/1048576).toFixed(1)}MB`;
+  return `${(b/1073741824).toFixed(2)}GB`;
+}
+
+function now() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+</script>
+</body>
+</html>
