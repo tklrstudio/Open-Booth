@@ -2,6 +2,7 @@
 
 **Purpose:** A reliable, low-cost, browser-based podcast recording tool for independent podcasters
 **Status:** Canonical
+**Workspace Code:** OB
 **Created:** 2026-02-26
 **Last Updated:** 2026-02-26
 **Version:** 1.0.0
