@@ -55,10 +55,12 @@ In priority order:
 ```
 open-booth/
 ├── client/
-│   ├── recorder.html     # Recording interface — runs in browser, dual encoder, IndexedDB local storage
-│   └── monitor.html      # Session monitoring — real-time upload status and QA
+│   ├── recorder.html      # Recording interface — runs in browser, dual encoder, IndexedDB local storage
+│   ├── monitor.html       # Session monitoring — real-time upload status and QA
+│   └── config.example.js  # Client configuration template — copy to config.js for deployment
 └── scripts/
-    └── chunk_server.py   # Lightweight Python server — receives and stores audio chunks
+    ├── server.py          # Lightweight Python server — receives and stores audio chunks
+    └── assemble.py        # Post-session tool — assembles chunks into final audio file
 ```
 
 **Key decisions:**
@@ -67,7 +69,7 @@ open-booth/
 - Dual encoders — two simultaneous encoding streams for redundancy at the capture layer
 - No WebRTC — each participant runs their own recorder; no attempt to capture remote audio
 
-**Configuration:** Environment-specific values (server IP, ports) live in `.env`. Never hardcoded. See `.env.example`.
+**Configuration:** Client settings (server URL, endpoints) live in `config.js` — copy from `config.example.js`. Server settings (ports, paths) live in `.env` — copy from `.env.example`. Neither is committed to the repo.
 
 ---
 

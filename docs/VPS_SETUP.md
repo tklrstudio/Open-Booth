@@ -1,6 +1,6 @@
 # Open Booth — VPS Setup Guide
 
-DigitalOcean Sydney · Ubuntu 24 · $6/month
+DigitalOcean · Ubuntu 24 · $6/month
 Everything — recorder, monitor, and chunk server — runs on one droplet.
 
 ---
@@ -22,19 +22,66 @@ Open `http://YOUR_IP/recorder.html` — that's it.
 
 ---
 
+## PART 0 — Get the code
+
+You need a copy of the Open Booth files on your Mac before you can set up the server.
+
+### Step 1: Download or clone the repo
+
+Pick **one** of these two options:
+
+**Option A — Git clone (recommended if you have git installed)**
+
+```bash
+git clone https://github.com/tklrstudio/Open-Booth.git
+```
+
+This creates an `Open-Booth/` folder in your current directory.
+
+**Option B — Download ZIP (no git required)**
+
+1. Go to https://github.com/tklrstudio/Open-Booth
+2. Click the green **Code** button → **Download ZIP**
+3. Unzip the file — this creates a folder called `Open-Booth-main/`
+
+### Step 2: Set your project path
+
+The rest of this guide uses `$OB` to refer to your Open Booth folder. Set it now so every command works regardless of how you got the files.
+
+**If you used git clone:**
+```bash
+OB=~/Open-Booth
+```
+
+**If you downloaded the ZIP:**
+```bash
+OB=~/Downloads/Open-Booth-main
+```
+
+Adjust the path if you cloned or unzipped somewhere else. You can check it worked:
+```bash
+ls $OB/scripts/server.py $OB/client/recorder.html
+```
+
+Both files should exist. If you get "No such file", double-check the path.
+
+> **Note:** `$OB` is a shell variable — it only lasts for your current terminal session. If you close the terminal and come back later, run the `OB=...` line again before using any `$OB` commands.
+
+---
+
 ## PART 1 — Create your server
 
-### Step 1: Create a DigitalOcean account
+### Step 3: Create a DigitalOcean account
 
 Go to https://digitalocean.com and sign up.
 You'll need a credit card. Cost is $6/month.
 
 ---
 
-### Step 2: Create a Droplet
+### Step 4: Create a Droplet
 
 1. Click **Create → Droplets**
-2. Region: **Sydney**
+2. Region: **Choose the region closest to you** (e.g. Sydney, San Francisco, London, Frankfurt, Singapore — pick whichever has the lowest latency to your location)
 3. Image: **Ubuntu 24.04 (LTS) x64**
 4. Size: **Basic → Regular → $6/month** (1GB RAM, 1 CPU, 25GB disk)
 5. Authentication: **Password** — set a strong one and save it somewhere
@@ -48,11 +95,11 @@ Wait ~60 seconds. Your droplet appears with an IP like `143.198.xxx.xxx`.
 
 ## PART 2 — Connect to your server
 
-### Step 3: Open Terminal on your Mac
+### Step 5: Open Terminal on your Mac
 
 `Cmd + Space` → type `Terminal` → Enter.
 
-### Step 4: SSH in
+### Step 6: SSH in
 
 ```bash
 ssh root@YOUR_IP
@@ -74,7 +121,7 @@ You're now on the remote machine. Same commands as your Mac terminal, different 
 
 Run these one at a time. Wait for each to finish.
 
-### Step 5: Update the system
+### Step 7: Update the system
 
 ```bash
 apt update && apt upgrade -y
@@ -82,19 +129,19 @@ apt update && apt upgrade -y
 
 Takes a minute or two.
 
-### Step 6: Install Nginx
+### Step 8: Install Nginx
 
 ```bash
 apt install nginx -y
 ```
 
-### Step 7: Verify Nginx is running
+### Step 9: Verify Nginx is running
 
 ```bash
 systemctl status nginx
 ```
 
-Should show `Active: active (running)`. 
+Should show `Active: active (running)`.
 
 Test from your Mac (open a new terminal tab, keep the server tab open):
 ```bash
@@ -107,9 +154,9 @@ You should get back an HTML page (Nginx's default welcome page). If so, Nginx is
 
 ## PART 4 — Upload your files
 
-Open a **new Terminal tab on your Mac** for this part. Replace paths with wherever you saved the files.
+Open a **new Terminal tab on your Mac** for this part. Make sure `$OB` is set (see Step 2).
 
-### Step 8: Create the app directory on the server
+### Step 10: Create the app directory on the server
 
 Back in your server terminal tab:
 ```bash
@@ -117,36 +164,25 @@ mkdir -p /opt/openbooth/chunks
 mkdir -p /var/www/openbooth
 ```
 
-### Step 9: Upload all files from your Mac
+### Step 11: Upload all files from your Mac
 
 In your Mac terminal tab:
 ```bash
 # Upload the chunk server
-scp ~/Downloads/server.py root@YOUR_IP:/opt/openbooth/server.py
+scp $OB/scripts/server.py root@YOUR_IP:/opt/openbooth/server.py
 
-# Upload the HTML files and config
-scp ~/Downloads/recorder.html root@YOUR_IP:/var/www/openbooth/recorder.html
-scp ~/Downloads/monitor.html  root@YOUR_IP:/var/www/openbooth/monitor.html
-scp ~/Downloads/config.js     root@YOUR_IP:/var/www/openbooth/config.js
+# Upload the HTML files
+scp $OB/client/recorder.html root@YOUR_IP:/var/www/openbooth/recorder.html
+scp $OB/client/monitor.html  root@YOUR_IP:/var/www/openbooth/monitor.html
 ```
 
-Each will ask for your password. You can also do all three at once:
-```bash
-scp ~/Downloads/server.py ~/Downloads/recorder.html ~/Downloads/monitor.html root@YOUR_IP:/tmp/
-```
-
-Then in your server terminal tab, move them:
-```bash
-mv /tmp/server.py   /opt/openbooth/server.py
-mv /tmp/recorder.html /var/www/openbooth/recorder.html
-mv /tmp/monitor.html  /var/www/openbooth/monitor.html
-```
+Each will ask for your password.
 
 ---
 
 ## PART 5 — Configure Nginx
 
-### Step 10: Create the Nginx config
+### Step 12: Create the Nginx config
 
 In your server terminal, run this whole block — copy and paste all of it:
 
@@ -190,7 +226,7 @@ server {
 EOF
 ```
 
-### Step 11: Enable the config
+### Step 13: Enable the config
 
 ```bash
 # Enable our site
@@ -208,7 +244,7 @@ You should see:
 nginx: configuration file /etc/nginx/nginx.conf test is successful
 ```
 
-### Step 12: Reload Nginx
+### Step 14: Reload Nginx
 
 ```bash
 systemctl reload nginx
@@ -218,7 +254,7 @@ systemctl reload nginx
 
 ## PART 6 — Run the chunk server
 
-### Step 13: Create a systemd service
+### Step 15: Create a systemd service
 
 Paste this whole block:
 
@@ -241,7 +277,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Step 14: Start and enable it
+### Step 16: Start and enable it
 
 ```bash
 systemctl daemon-reload
@@ -249,7 +285,7 @@ systemctl enable openbooth
 systemctl start openbooth
 ```
 
-### Step 15: Check it's running
+### Step 17: Check it's running
 
 ```bash
 systemctl status openbooth
@@ -261,7 +297,7 @@ Should show `Active: active (running)`.
 
 ## PART 7 — Open the firewall
 
-### Step 16: Allow web traffic
+### Step 18: Allow web traffic
 
 In the DigitalOcean web dashboard:
 
@@ -282,15 +318,15 @@ Port 8080 does NOT need to be open — Nginx handles it internally.
 
 ## PART 8 — Configure and upload
 
-### Step 17: Create your config file
+### Step 19: Create your config file
 
-In the `client/` folder on your Mac, copy the example config:
+On your Mac, copy the example config:
 
 ```bash
-cp config.example.js config.js
+cp $OB/client/config.example.js $OB/client/config.js
 ```
 
-Open `config.js` in any text editor and set your server's IP:
+Open `$OB/client/config.js` in any text editor and set your server's IP:
 
 ```javascript
 const OB_CONFIG = {
@@ -299,17 +335,17 @@ const OB_CONFIG = {
 };
 ```
 
-### Step 18: Upload the config file
+### Step 20: Upload the config file
 
 ```bash
-scp client/config.js root@YOUR_IP:/var/www/openbooth/config.js
+scp $OB/client/config.js root@YOUR_IP:/var/www/openbooth/config.js
 ```
 
 ---
 
 ## PART 9 — Test everything
 
-### Step 20: Full smoke test
+### Step 21: Full smoke test
 
 From your Mac browser, open:
 ```
@@ -344,7 +380,7 @@ http://YOUR_IP/monitor.html?session=OB-YYYYMMDD-XXXX
 scp -r root@YOUR_IP:/opt/openbooth/chunks/OB-20260306-A3BX ~/Podcasts/chunks/
 
 # Assemble
-python3 assemble.py OB-20260306-A3BX --chunks-dir ~/Podcasts/chunks/OB-20260306-A3BX
+python3 $OB/scripts/assemble.py OB-20260306-A3BX --chunks-dir ~/Podcasts/chunks/OB-20260306-A3BX
 ```
 
 ### Clean up the server
@@ -395,7 +431,7 @@ curl http://YOUR_IP/health
 - Run `systemctl status nginx` on server
 
 **Recorder loads but chunks don't upload**
-- Check UPLOAD_ENDPOINT in recorder.html has your actual IP
+- Check UPLOAD_ENDPOINT in config.js has your actual IP
 - Check chunk server: `systemctl status openbooth`
 - Watch live logs during a test: `journalctl -u openbooth -f`
 - Check browser console (F12) for errors
@@ -403,7 +439,7 @@ curl http://YOUR_IP/health
 **`nginx -t` shows an error**
 - Usually a typo in the config
 - Run `cat /etc/nginx/sites-available/openbooth` to inspect it
-- Re-paste the config block from Step 10
+- Re-paste the config block from Step 12
 
 **"Permission denied" on SSH**
 - Make sure you're typing `root@YOUR_IP` with the right IP
@@ -423,9 +459,7 @@ When you want a proper `https://` URL:
    certbot --nginx -d yourdomain.com
    ```
 4. Certbot updates your Nginx config automatically and renews certificates
-5. Update UPLOAD_ENDPOINT and SESSION_STATE_URL to use `https://`
-
-The whole HTTPS upgrade takes about 10 minutes once you have a domain.
+5. Update UPLOAD_ENDPOINT and SESSION_STATE_URL in config.js to use `https://`
 
 ---
 
@@ -433,6 +467,6 @@ The whole HTTPS upgrade takes about 10 minutes once you have a domain.
 
 | Item | Cost |
 |------|------|
-| DigitalOcean droplet (Sydney, 1GB) | $6/month |
+| DigitalOcean droplet (1GB) | $6/month |
 | Everything else | Free |
 | **Total** | **$6/month** |
