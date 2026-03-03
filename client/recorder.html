@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fresh Rubber — Recorder</title>
+<title>Open Booth — Recorder</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700&family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -236,7 +236,7 @@ video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); dis
 <div class="wrap">
 
   <div class="header">
-    <div class="logo">Fresh<span>.</span>Rubber</div>
+    <div class="logo">Open<span>.</span>Booth</div>
     <div class="session-id"><strong id="sessionDisplay">—</strong>SESSION</div>
   </div>
 
@@ -299,22 +299,25 @@ video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); dis
 
     <div class="notice" id="cfgNotice">
       <strong>⚠ No upload endpoint configured.</strong>
-      Set <code>UPLOAD_ENDPOINT</code> at the top of the script.
+      Copy <code>config.example.js</code> → <code>config.js</code> and set <code>UPLOAD_ENDPOINT</code>.
       Local cache (IndexedDB) is active — use Rescue after recording.
     </div>
   </div>
 
 </div>
 
+<script src="config.js"></script>
 <script>
 // ═══════════════════════════════════════════════
-// CONFIGURATION
+// CONFIGURATION — loaded from config.js
+// Copy config.example.js → config.js and set your values.
 // ═══════════════════════════════════════════════
-const UPLOAD_ENDPOINT   = 'https://recorder.tklrstudio.com/upload';
-const SERVER_CHUNK_MS   = 10000;   // 10s — server upload cadence
-const IDB_CHUNK_MS      = 30000;   // 30s — local cache cadence
-const SERVER_VIDEO_KBPS = 800;     // degraded for upload
-const LOCAL_VIDEO_KBPS  = 4000;    // full quality for cache
+const _c = (typeof OB_CONFIG !== 'undefined') ? OB_CONFIG : {};
+const UPLOAD_ENDPOINT   = _c.UPLOAD_ENDPOINT   ?? null;
+const SERVER_CHUNK_MS   = _c.SERVER_CHUNK_MS   ?? 10000;   // 10s — server upload cadence
+const IDB_CHUNK_MS      = _c.IDB_CHUNK_MS      ?? 30000;   // 30s — local cache cadence
+const SERVER_VIDEO_KBPS = _c.SERVER_VIDEO_KBPS ?? 800;     // degraded for upload
+const LOCAL_VIDEO_KBPS  = _c.LOCAL_VIDEO_KBPS  ?? 4000;    // full quality for cache
 // ═══════════════════════════════════════════════
 
 // Session
@@ -374,7 +377,7 @@ function doJoin() {
 // ── INDEXEDDB ────────────────────────────────
 async function openIDB() {
   return new Promise((res, rej) => {
-    const r = indexedDB.open('FRRecorder_v2', 1);
+    const r = indexedDB.open('OBRecorder_v1', 1);
     r.onupgradeneeded = e => {
       const d = e.target.result;
       if (!d.objectStoreNames.contains('chunks'))
@@ -663,7 +666,7 @@ function getBestMime() {
   return ['video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=h264,opus','video/webm;codecs=vp9,opus','video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || null;
 }
 function ext(mime) { return mime.startsWith('video/mp4') ? 'mp4' : 'webm'; }
-function genSessionId() { return 'FR-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
+function genSessionId() { return 'OB-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
 function pad4(n) { return String(n).padStart(4,'0'); }
 function p2(n)   { return String(n).padStart(2,'0'); }
 function fmtSz(b){ return b < 1048576 ? `${(b/1024).toFixed(0)}KB` : `${(b/1048576).toFixed(1)}MB`; }

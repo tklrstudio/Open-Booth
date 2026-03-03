@@ -1,4 +1,4 @@
-# Fresh Rubber — VPS Setup Guide
+# Open Booth — VPS Setup Guide
 
 DigitalOcean Sydney · Ubuntu 24 · $6/month
 Everything — recorder, monitor, and chunk server — runs on one droplet.
@@ -15,10 +15,10 @@ Your droplet (143.198.x.x)
 │   └── /session-state → proxies to chunk server
 │   └── /health        → proxies to chunk server
 └── Chunk server (port 8080, internal only)
-    └── /opt/freshrubber/chunks/
+    └── /opt/openbooth/chunks/
 ```
 
-Gav opens `http://YOUR_IP/recorder.html` — that's it.
+Open `http://YOUR_IP/recorder.html` — that's it.
 
 ---
 
@@ -38,7 +38,7 @@ You'll need a credit card. Cost is $6/month.
 3. Image: **Ubuntu 24.04 (LTS) x64**
 4. Size: **Basic → Regular → $6/month** (1GB RAM, 1 CPU, 25GB disk)
 5. Authentication: **Password** — set a strong one and save it somewhere
-6. Hostname: `freshrubber`
+6. Hostname: `openbooth`
 7. Click **Create Droplet**
 
 Wait ~60 seconds. Your droplet appears with an IP like `143.198.xxx.xxx`.
@@ -63,7 +63,7 @@ Enter your password when prompted.
 
 Your prompt becomes:
 ```
-root@freshrubber:~#
+root@openbooth:~#
 ```
 
 You're now on the remote machine. Same commands as your Mac terminal, different computer.
@@ -113,8 +113,8 @@ Open a **new Terminal tab on your Mac** for this part. Replace paths with wherev
 
 Back in your server terminal tab:
 ```bash
-mkdir -p /opt/freshrubber/chunks
-mkdir -p /var/www/freshrubber
+mkdir -p /opt/openbooth/chunks
+mkdir -p /var/www/openbooth
 ```
 
 ### Step 9: Upload all files from your Mac
@@ -122,11 +122,12 @@ mkdir -p /var/www/freshrubber
 In your Mac terminal tab:
 ```bash
 # Upload the chunk server
-scp ~/Downloads/server.py root@YOUR_IP:/opt/freshrubber/server.py
+scp ~/Downloads/server.py root@YOUR_IP:/opt/openbooth/server.py
 
-# Upload the HTML files
-scp ~/Downloads/recorder.html root@YOUR_IP:/var/www/freshrubber/recorder.html
-scp ~/Downloads/monitor.html  root@YOUR_IP:/var/www/freshrubber/monitor.html
+# Upload the HTML files and config
+scp ~/Downloads/recorder.html root@YOUR_IP:/var/www/openbooth/recorder.html
+scp ~/Downloads/monitor.html  root@YOUR_IP:/var/www/openbooth/monitor.html
+scp ~/Downloads/config.js     root@YOUR_IP:/var/www/openbooth/config.js
 ```
 
 Each will ask for your password. You can also do all three at once:
@@ -136,9 +137,9 @@ scp ~/Downloads/server.py ~/Downloads/recorder.html ~/Downloads/monitor.html roo
 
 Then in your server terminal tab, move them:
 ```bash
-mv /tmp/server.py   /opt/freshrubber/server.py
-mv /tmp/recorder.html /var/www/freshrubber/recorder.html
-mv /tmp/monitor.html  /var/www/freshrubber/monitor.html
+mv /tmp/server.py   /opt/openbooth/server.py
+mv /tmp/recorder.html /var/www/openbooth/recorder.html
+mv /tmp/monitor.html  /var/www/openbooth/monitor.html
 ```
 
 ---
@@ -150,13 +151,13 @@ mv /tmp/monitor.html  /var/www/freshrubber/monitor.html
 In your server terminal, run this whole block — copy and paste all of it:
 
 ```bash
-cat > /etc/nginx/sites-available/freshrubber << 'EOF'
+cat > /etc/nginx/sites-available/openbooth << 'EOF'
 server {
     listen 80;
     server_name _;
 
     # Serve HTML files
-    root /var/www/freshrubber;
+    root /var/www/openbooth;
     index recorder.html;
 
     location / {
@@ -193,7 +194,7 @@ EOF
 
 ```bash
 # Enable our site
-ln -s /etc/nginx/sites-available/freshrubber /etc/nginx/sites-enabled/freshrubber
+ln -s /etc/nginx/sites-available/openbooth /etc/nginx/sites-enabled/openbooth
 
 # Disable the default Nginx page
 rm /etc/nginx/sites-enabled/default
@@ -222,16 +223,16 @@ systemctl reload nginx
 Paste this whole block:
 
 ```bash
-cat > /etc/systemd/system/freshrubber.service << 'EOF'
+cat > /etc/systemd/system/openbooth.service << 'EOF'
 [Unit]
-Description=Fresh Rubber Chunk Server
+Description=Open Booth Chunk Server
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/opt/freshrubber
-ExecStart=/usr/bin/python3 /opt/freshrubber/server.py --port 8080 --chunks-dir /opt/freshrubber/chunks
+WorkingDirectory=/opt/openbooth
+ExecStart=/usr/bin/python3 /opt/openbooth/server.py --port 8080 --chunks-dir /opt/openbooth/chunks
 Restart=always
 RestartSec=5
 
@@ -244,14 +245,14 @@ EOF
 
 ```bash
 systemctl daemon-reload
-systemctl enable freshrubber
-systemctl start freshrubber
+systemctl enable openbooth
+systemctl start openbooth
 ```
 
 ### Step 15: Check it's running
 
 ```bash
-systemctl status freshrubber
+systemctl status openbooth
 ```
 
 Should show `Active: active (running)`.
@@ -265,7 +266,7 @@ Should show `Active: active (running)`.
 In the DigitalOcean web dashboard:
 
 1. Click your droplet → **Networking** tab → **Firewalls**
-2. **Create Firewall**, name it `freshrubber`
+2. **Create Firewall**, name it `openbooth`
 3. Under **Inbound Rules**, add:
 
 | Type | Protocol | Port | Sources |
@@ -279,42 +280,29 @@ Port 8080 does NOT need to be open — Nginx handles it internally.
 
 ---
 
-## PART 8 — Update the HTML files
+## PART 8 — Configure and upload
 
-The recorder and monitor files still have `null` for the endpoints.
-You need to update them with your actual IP, then re-upload.
+### Step 17: Create your config file
 
-### Step 17: Edit recorder.html on your Mac
-
-Open `recorder.html` in any text editor. Find these lines near the top of the script:
-
-```javascript
-const UPLOAD_ENDPOINT  = null;
-```
-
-Change to:
-
-```javascript
-const UPLOAD_ENDPOINT  = 'http://YOUR_IP/upload';
-```
-
-### Step 18: Edit monitor.html on your Mac
-
-Find:
-```javascript
-const SESSION_STATE_URL = null;
-```
-
-Change to:
-```javascript
-const SESSION_STATE_URL = 'http://YOUR_IP/session-state';
-```
-
-### Step 19: Re-upload the updated files
+In the `client/` folder on your Mac, copy the example config:
 
 ```bash
-scp ~/Downloads/recorder.html root@YOUR_IP:/var/www/freshrubber/recorder.html
-scp ~/Downloads/monitor.html  root@YOUR_IP:/var/www/freshrubber/monitor.html
+cp config.example.js config.js
+```
+
+Open `config.js` in any text editor and set your server's IP:
+
+```javascript
+const OB_CONFIG = {
+  UPLOAD_ENDPOINT:   'http://YOUR_IP/upload',
+  SESSION_STATE_URL: 'http://YOUR_IP/session-state',
+};
+```
+
+### Step 18: Upload the config file
+
+```bash
+scp client/config.js root@YOUR_IP:/var/www/openbooth/config.js
 ```
 
 ---
@@ -328,19 +316,19 @@ From your Mac browser, open:
 http://YOUR_IP/recorder.html
 ```
 
-You should see the Fresh Rubber recorder page. Enter a name, allow camera/mic, hit Start Recording, record for 30 seconds, hit Stop.
+You should see the Open Booth recorder page. Enter a name, allow camera/mic, hit Start Recording, record for 30 seconds, hit Stop.
 
 Then check the server received the chunks:
 ```bash
 ssh root@YOUR_IP
-ls /opt/freshrubber/chunks/
+ls /opt/openbooth/chunks/
 ```
 
 You should see a folder named with your session ID containing chunk files.
 
 Open the monitor:
 ```
-http://YOUR_IP/monitor.html?session=FR-YYYYMMDD-XXXX
+http://YOUR_IP/monitor.html?session=OB-YYYYMMDD-XXXX
 ```
 
 (Replace with the session ID from your recorder URL.)
@@ -353,17 +341,17 @@ http://YOUR_IP/monitor.html?session=FR-YYYYMMDD-XXXX
 
 ```bash
 # On your Mac — download the session chunks
-scp -r root@YOUR_IP:/opt/freshrubber/chunks/FR-20260306-A3BX ~/Podcasts/chunks/
+scp -r root@YOUR_IP:/opt/openbooth/chunks/OB-20260306-A3BX ~/Podcasts/chunks/
 
 # Assemble
-python3 assemble.py FR-20260306-A3BX --chunks-dir ~/Podcasts/chunks/FR-20260306-A3BX
+python3 assemble.py OB-20260306-A3BX --chunks-dir ~/Podcasts/chunks/OB-20260306-A3BX
 ```
 
 ### Clean up the server
 
 ```bash
 ssh root@YOUR_IP
-rm -rf /opt/freshrubber/chunks/FR-20260306-A3BX
+rm -rf /opt/openbooth/chunks/OB-20260306-A3BX
 ```
 
 Don't leave chunks on the server indefinitely — 25GB fills faster than you'd think with video.
@@ -374,13 +362,13 @@ Don't leave chunks on the server indefinitely — 25GB fills faster than you'd t
 
 ```bash
 # Check chunk server is running
-systemctl status freshrubber
+systemctl status openbooth
 
 # Restart chunk server
-systemctl restart freshrubber
+systemctl restart openbooth
 
 # Watch chunk server logs live
-journalctl -u freshrubber -f
+journalctl -u openbooth -f
 
 # Check Nginx is running
 systemctl status nginx
@@ -392,7 +380,7 @@ systemctl reload nginx
 df -h
 
 # List sessions on server
-ls /opt/freshrubber/chunks/
+ls /opt/openbooth/chunks/
 
 # Health check
 curl http://YOUR_IP/health
@@ -408,13 +396,13 @@ curl http://YOUR_IP/health
 
 **Recorder loads but chunks don't upload**
 - Check UPLOAD_ENDPOINT in recorder.html has your actual IP
-- Check chunk server: `systemctl status freshrubber`
-- Watch live logs during a test: `journalctl -u freshrubber -f`
+- Check chunk server: `systemctl status openbooth`
+- Watch live logs during a test: `journalctl -u openbooth -f`
 - Check browser console (F12) for errors
 
 **`nginx -t` shows an error**
 - Usually a typo in the config
-- Run `cat /etc/nginx/sites-available/freshrubber` to inspect it
+- Run `cat /etc/nginx/sites-available/openbooth` to inspect it
 - Re-paste the config block from Step 10
 
 **"Permission denied" on SSH**

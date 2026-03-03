@@ -26,11 +26,13 @@ Assembly
 
 | File | Purpose |
 |------|---------|
-| `recorder.html` | Recording page — each participant opens this |
-| `monitor.html`  | Live session dashboard — open this during recording |
-| `assemble.py`   | Post-session chunk assembly |
-| `server.py`     | Chunk upload receiver + session state server |
-| `VPS_SETUP.md`  | Full step-by-step server setup guide |
+| `client/recorder.html` | Recording page — each participant opens this |
+| `client/monitor.html`  | Live session dashboard — open this during recording |
+| `client/config.example.js` | Configuration template — copy to `config.js` |
+| `scripts/server.py`     | Chunk upload receiver + session state server |
+| `scripts/assemble.py`   | Post-session chunk assembly |
+| `docs/VPS_SETUP.md`     | Full step-by-step server setup guide |
+| `.env.example`           | Server environment variable template |
 
 ---
 
@@ -57,23 +59,31 @@ See `VPS_SETUP.md` for the complete setup walkthrough.
 
 ### Phase 1 — Test locally (no server needed)
 
-Open `recorder.html` directly in Chrome. Without an upload endpoint set, the page falls back to IndexedDB only. After recording, click **Download Local Cache (Rescue)** to get your chunks.
+Open `client/recorder.html` directly in Chrome. Without a config file, the page falls back to IndexedDB only. After recording, click **Download Local Cache (Rescue)** to get your chunks.
 
 Use this to validate recording quality before touching the server.
 
-### Phase 2 — Deploy to server
+### Phase 2 — Configure
 
-Follow `VPS_SETUP.md` end to end. When done, update these two lines before uploading the HTML files:
-
-**In recorder.html:**
-```javascript
-const UPLOAD_ENDPOINT = 'http://YOUR_IP/upload';
+```bash
+cd client
+cp config.example.js config.js
 ```
 
-**In monitor.html:**
+Edit `config.js` with your server's URL:
+
 ```javascript
-const SESSION_STATE_URL = 'http://YOUR_IP/session-state';
+const OB_CONFIG = {
+  UPLOAD_ENDPOINT:   'https://your-domain.com/upload',
+  SESSION_STATE_URL: 'https://your-domain.com/session-state',
+};
 ```
+
+`config.js` is gitignored — your settings won't be committed.
+
+### Phase 3 — Deploy to server
+
+Follow `docs/VPS_SETUP.md` end to end. Upload the HTML files and your `config.js` to the server.
 
 ---
 
@@ -184,7 +194,7 @@ No software, no account, no configuration.
 ## Troubleshooting
 
 **Chunks not uploading to server**
-- Check the redundancy panel — "no endpoint" means UPLOAD_ENDPOINT is still null
+- Check the redundancy panel — "no endpoint" means config.js is missing or UPLOAD_ENDPOINT is null
 - Health check: `curl http://YOUR_IP/health`
 - Live server logs: `ssh root@YOUR_IP` then `journalctl -u openbooth -f`
 - Local cache is always running regardless of upload status
@@ -204,7 +214,7 @@ No software, no account, no configuration.
 - All participants should use Chrome for consistent output
 
 **Monitor shows no participants**
-- Check SESSION_STATE_URL is set correctly in monitor.html
+- Check SESSION_STATE_URL is set correctly in config.js
 - Confirm chunk server is running: `systemctl status openbooth`
 
 ---
@@ -226,4 +236,4 @@ When you want `https://` instead of `http://`:
 2. Point an A record at your droplet IP
 3. `apt install certbot python3-certbot-nginx -y`
 4. `certbot --nginx -d yourdomain.com`
-5. Update UPLOAD_ENDPOINT and SESSION_STATE_URL to `https://`
+5. Update UPLOAD_ENDPOINT and SESSION_STATE_URL in `config.js` to `https://`

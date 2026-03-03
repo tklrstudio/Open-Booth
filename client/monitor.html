@@ -235,20 +235,23 @@ body::before {
 
   <div class="notice" id="cfgNotice">
     <strong>⚠ No session state URL configured.</strong>
-    Set <code>SESSION_STATE_URL</code> at the top of the script to enable live monitoring.
+    Copy <code>config.example.js</code> → <code>config.js</code> and set <code>SESSION_STATE_URL</code> to enable live monitoring.
     In offline mode, this page shows demo data.
   </div>
 
 </div>
 
+<script src="config.js"></script>
 <script>
 // ═══════════════════════════════════════════════
-// CONFIGURATION
+// CONFIGURATION — loaded from config.js
+// Copy config.example.js → config.js and set your values.
 // ═══════════════════════════════════════════════
-const SESSION_STATE_URL = null; // Set to 'http://YOUR_IP/session-state' after VPS setup
-const POLL_INTERVAL_MS  = 5000; // poll every 5s
-const STALE_THRESHOLD_S = 30;   // warn if no chunk in 30s
-const DEAD_THRESHOLD_S  = 90;   // error if no chunk in 90s
+const _c = (typeof OB_CONFIG !== 'undefined') ? OB_CONFIG : {};
+const SESSION_STATE_URL = _c.SESSION_STATE_URL ?? null;
+const POLL_INTERVAL_MS  = _c.POLL_INTERVAL_MS  ?? 5000;  // poll every 5s
+const STALE_THRESHOLD_S = _c.STALE_THRESHOLD_S ?? 30;    // warn if no chunk in 30s
+const DEAD_THRESHOLD_S  = _c.DEAD_THRESHOLD_S  ?? 90;    // error if no chunk in 90s
 // ═══════════════════════════════════════════════
 
 const params    = new URLSearchParams(location.search);

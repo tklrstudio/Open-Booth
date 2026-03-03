@@ -315,9 +315,12 @@ def main():
     global CHUNKS_DIR
 
     parser = argparse.ArgumentParser(description='Open Booth chunk upload server')
-    parser.add_argument('--port',       type=int, default=DEFAULT_PORT, help=f'Port (default: {DEFAULT_PORT})')
-    parser.add_argument('--chunks-dir', default='./chunks',             help='Where to save chunks (default: ./chunks)')
+    parser.add_argument('--port',       type=int, default=int(os.environ.get('OB_PORT', DEFAULT_PORT)),   help=f'Port (default: {DEFAULT_PORT})')
+    parser.add_argument('--chunks-dir', default=os.environ.get('OB_CHUNKS_DIR', './chunks'),              help='Where to save chunks (default: ./chunks)')
     args = parser.parse_args()
+
+    global MAX_CHUNK_MB
+    MAX_CHUNK_MB = int(os.environ.get('OB_MAX_CHUNK_MB', MAX_CHUNK_MB))
 
     CHUNKS_DIR = Path(args.chunks_dir)
     CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
