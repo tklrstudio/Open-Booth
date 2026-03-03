@@ -13,7 +13,7 @@
 
 Open Booth exists because independent podcasters deserve a recording tool that is genuinely reliable, costs almost nothing to run, and doesn't force them into specific call software or subscription fees. It was built by a podcaster who experienced data loss with paid tools and decided to fix the problem rather than keep paying for it.
 
-Open Booth is **open source**. Anyone can use it, self-host it, modify it, or build on it. A hosted tier exists for people who want it to just work without setting up a server.
+Open Booth is **open source**. Anyone can use it, self-host it, modify it, or build on it.
 
 ---
 
@@ -22,7 +22,7 @@ Open Booth is **open source**. Anyone can use it, self-host it, modify it, or bu
 - A podcaster with no technical background can self-host Open Booth in under 30 minutes using the docs (or with AI assistance from the docs)
 - A recording session completes without data loss
 - If anything fails, the user knows immediately — what failed, what was recovered, what may be missing
-- The hosted tier runs on a $6/month DigitalOcean droplet
+- Self-hosting runs on a $6/month DigitalOcean droplet
 - The repo README and docs are clear enough that an AI assistant can guide a non-technical user through setup without additional context
 
 ---
