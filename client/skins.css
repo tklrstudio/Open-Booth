@@ -1,0 +1,160 @@
+/* Open Booth — Skins
+   Add ?skin=name to the recorder URL.
+   Available: studio-warm, clean-light, soft-dark, broadcast, analog, glass, campfire, newsroom
+   Default (no param) uses the built-in terminal theme.
+*/
+
+/* ── SHARED STRUCTURAL OVERRIDES ──────────────────────────────── */
+[data-skin] .video-wrap,
+[data-skin] #nameGate,
+[data-skin] .r-panel,
+[data-skin] .s-strip,
+[data-skin] .log-wrap,
+[data-skin] .notice,
+[data-skin] .host-controls,
+[data-skin] .controlled-strip { border-radius: var(--radius); overflow: hidden; }
+
+[data-skin] .btn,
+[data-skin] .btn-join { border-radius: var(--radius-sm); }
+[data-skin] .name-input { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+[data-skin] .name-suffix { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+[data-skin] .chapter-input { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+[data-skin] .btn.chapter { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+[data-skin] .btn-join { color: var(--on-accent); }
+[data-skin] .btn-join:hover { background: var(--accent); filter: brightness(1.15); }
+[data-skin] .btn.go:hover { color: var(--on-accent); }
+
+[data-skin] .notice {
+  background: var(--surface);
+  border-color: var(--border);
+}
+[data-skin] .host-controls {
+  border-color: var(--border);
+  background: var(--surface);
+}
+[data-skin] .controlled-strip {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+/* ── 1. STUDIO WARM ──────────────────────────────────────────── */
+/* Charcoal + amber/gold + cream. Wood-paneled recording booth. */
+:root[data-skin="studio-warm"] {
+  --bg: #1a1612; --surface: #221e19; --surface2: #2a2520;
+  --border: #3d352c; --accent: #d4a04e; --success: #7cb87c;
+  --warn: #d4a04e; --danger: #c45c5c; --text: #ede4d4;
+  --muted: #8a7e6e; --dim: #4a4238;
+  --display: 'DM Sans', sans-serif; --mono: 'IBM Plex Mono', monospace;
+  --radius: 8px; --radius-sm: 6px; --on-accent: #1a1612;
+}
+[data-skin="studio-warm"] body::before {
+  background: radial-gradient(ellipse, rgba(212,160,78,0.06) 0%, transparent 70%);
+}
+
+/* ── 2. CLEAN LIGHT ──────────────────────────────────────────── */
+/* White, minimal, indigo accent. Linear/Notion feel. */
+:root[data-skin="clean-light"] {
+  --bg: #ffffff; --surface: #f8f9fa; --surface2: #f0f1f3;
+  --border: #e2e4e8; --accent: #5b5fc7; --success: #2da44e;
+  --warn: #d4a72c; --danger: #cf222e; --text: #1f2328;
+  --muted: #656d76; --dim: #9ca3af;
+  --display: 'Inter', sans-serif; --mono: 'Inter', sans-serif;
+  --radius: 8px; --radius-sm: 6px; --on-accent: #ffffff;
+}
+[data-skin="clean-light"] body::before { display: none; }
+
+/* ── 3. SOFT DARK ────────────────────────────────────────────── */
+/* Muted purple/blue. Discord/Spotify. Friendly, not technical. */
+:root[data-skin="soft-dark"] {
+  --bg: #1e1f2e; --surface: #272838; --surface2: #2e3044;
+  --border: #3a3c50; --accent: #8b8ff5; --success: #57d6a0;
+  --warn: #f0c55e; --danger: #f06c7a; --text: #e4e5f1;
+  --muted: #7c7e9a; --dim: #444660;
+  --display: 'Plus Jakarta Sans', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --radius: 12px; --radius-sm: 8px; --on-accent: #ffffff;
+}
+[data-skin="soft-dark"] body::before {
+  background: radial-gradient(ellipse, rgba(139,143,245,0.05) 0%, transparent 70%);
+}
+
+/* ── 4. BROADCAST ────────────────────────────────────────────── */
+/* Deep navy + red/white. Bold TV control room energy. */
+:root[data-skin="broadcast"] {
+  --bg: #0a1628; --surface: #0f1d33; --surface2: #152540;
+  --border: #2a3f5f; --accent: #e63946; --success: #2ec4b6;
+  --warn: #ff9f1c; --danger: #e63946; --text: #ffffff;
+  --muted: #6b8299; --dim: #2a3f5f;
+  --display: 'Oswald', sans-serif; --mono: 'Space Mono', monospace;
+  --radius: 2px; --radius-sm: 2px; --on-accent: #ffffff;
+}
+[data-skin="broadcast"] body::before {
+  background: radial-gradient(ellipse, rgba(230,57,70,0.04) 0%, transparent 70%);
+}
+[data-skin="broadcast"] .logo { letter-spacing: 6px; }
+
+/* ── 5. ANALOG ───────────────────────────────────────────────── */
+/* Cream/off-white, rust accent. Vintage audio gear. */
+:root[data-skin="analog"] {
+  --bg: #f5f0e8; --surface: #ebe5db; --surface2: #e0d9ce;
+  --border: #ccc4b5; --accent: #b85c38; --success: #6b8f5e;
+  --warn: #c49840; --danger: #b85c38; --text: #2c2418;
+  --muted: #8a7e6e; --dim: #a09080;
+  --display: 'Playfair Display', serif; --mono: 'Courier Prime', monospace;
+  --radius: 4px; --radius-sm: 3px; --on-accent: #ffffff;
+}
+[data-skin="analog"] body::before { display: none; }
+
+/* ── 6. GLASS ────────────────────────────────────────────────── */
+/* Frosted panels, violet-to-cyan. Apple-esque. */
+:root[data-skin="glass"] {
+  --bg: #0d0d1a; --surface: rgba(255,255,255,0.04); --surface2: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08); --accent: #a78bfa; --success: #34d399;
+  --warn: #fbbf24; --danger: #f87171; --text: #f1f5f9;
+  --muted: #6b7280; --dim: rgba(255,255,255,0.15);
+  --display: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --radius: 16px; --radius-sm: 10px; --on-accent: #ffffff;
+}
+[data-skin="glass"] body::before {
+  background: radial-gradient(ellipse, rgba(167,139,250,0.08) 0%, transparent 70%);
+}
+[data-skin="glass"] #nameGate,
+[data-skin="glass"] .r-layer,
+[data-skin="glass"] .s-cell,
+[data-skin="glass"] .log-wrap,
+[data-skin="glass"] .notice,
+[data-skin="glass"] .host-controls,
+[data-skin="glass"] .controlled-strip {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── 7. CAMPFIRE ─────────────────────────────────────────────── */
+/* Dark charcoal + orange/ember. Cozy and podcast-y. */
+:root[data-skin="campfire"] {
+  --bg: #181614; --surface: #222019; --surface2: #2a2820;
+  --border: #3a3630; --accent: #e8722a; --success: #5a9e6f;
+  --warn: #d4a04e; --danger: #c4524a; --text: #e8e0d4;
+  --muted: #8a8070; --dim: #3a3630;
+  --display: 'Nunito', sans-serif; --mono: 'Fira Code', monospace;
+  --radius: 10px; --radius-sm: 8px; --on-accent: #ffffff;
+}
+[data-skin="campfire"] body::before {
+  background: radial-gradient(ellipse, rgba(232,114,42,0.06) 0%, transparent 70%);
+}
+
+/* ── 8. NEWSROOM ─────────────────────────────────────────────── */
+/* Light, sharp borders, red accent. Editorial production tool. */
+:root[data-skin="newsroom"] {
+  --bg: #fafafa; --surface: #ffffff; --surface2: #f5f5f5;
+  --border: #1a1a1a; --accent: #d42020; --success: #1a7a3a;
+  --warn: #b86e00; --danger: #d42020; --text: #1a1a1a;
+  --muted: #666666; --dim: #888888;
+  --display: 'Space Grotesk', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --radius: 0px; --radius-sm: 0px; --on-accent: #ffffff;
+}
+[data-skin="newsroom"] body::before { display: none; }
+[data-skin="newsroom"] #nameGate,
+[data-skin="newsroom"] .r-panel,
+[data-skin="newsroom"] .s-strip,
+[data-skin="newsroom"] .log-wrap { border-width: 2px; }
