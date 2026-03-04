@@ -424,6 +424,33 @@ Roles are optional — if nobody uses `?role=host`, Open Booth works exactly as 
 
 ---
 
+## UI Skins
+
+Add `?skin=name` to the recorder URL to change the visual theme. The default terminal theme is used when no skin is specified.
+
+| Skin | Description |
+|------|-------------|
+| `studio-warm` | Charcoal + amber/gold. Warm recording booth feel. |
+| `clean-light` | White, minimal, indigo accent. Notion-like. |
+| `soft-dark` | Muted purple, rounded corners. Discord/Spotify. |
+| `broadcast` | Deep navy + red/white. Bold TV control room. |
+| `analog` | Cream, rust, serif type. Vintage audio gear. |
+| `glass` | Frosted panels, violet accent. Apple-esque. |
+| `campfire` | Dark charcoal + orange/ember. Cozy. |
+| `newsroom` | Light, sharp black borders, red accent. Editorial. |
+
+Example:
+```
+http://YOUR_IP/recorder.html?session=OB-20260306-A3BX&skin=glass
+```
+
+Skins can be combined with host roles:
+```
+http://YOUR_IP/recorder.html?session=OB-20260306-A3BX&role=host&skin=campfire
+```
+
+---
+
 ## After each episode
 
 ### Download and assemble
