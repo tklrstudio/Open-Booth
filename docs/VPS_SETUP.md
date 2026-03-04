@@ -10,10 +10,13 @@ Everything — recorder, monitor, and chunk server — runs on one droplet.
 ```
 Your droplet (143.198.x.x)
 ├── Nginx (port 80)
-│   ├── /              → serves recorder.html + monitor.html
-│   └── /upload        → proxies to chunk server
-│   └── /session-state → proxies to chunk server
-│   └── /health        → proxies to chunk server
+│   ├── /                 → serves recorder.html + monitor.html
+│   ├── /upload           → proxies to chunk server
+│   ├── /register         → proxies to chunk server
+│   ├── /session-command  → proxies to chunk server
+│   ├── /session-commands → proxies to chunk server
+│   ├── /session-state    → proxies to chunk server
+│   └── /health           → proxies to chunk server
 └── Chunk server (port 8080, internal only)
     └── /opt/openbooth/chunks/
 ```
@@ -208,6 +211,21 @@ server {
         proxy_read_timeout 300s;
     }
 
+    location /register {
+        proxy_pass       http://localhost:8080;
+        proxy_set_header Host $host;
+    }
+
+    location /session-command {
+        proxy_pass       http://localhost:8080;
+        proxy_set_header Host $host;
+    }
+
+    location /session-commands {
+        proxy_pass       http://localhost:8080;
+        proxy_set_header Host $host;
+    }
+
     location /session-state {
         proxy_pass       http://localhost:8080;
         proxy_set_header Host $host;
@@ -368,6 +386,41 @@ http://YOUR_IP/monitor.html?session=OB-YYYYMMDD-XXXX
 ```
 
 (Replace with the session ID from your recorder URL.)
+
+---
+
+## Session Workflow
+
+### Host and guest roles
+
+One participant can act as the **host** by adding `?role=host` to their recorder URL. The host gets coordination controls; everyone else is a guest.
+
+**Host URL:**
+```
+http://YOUR_IP/recorder.html?session=OB-20260306-A3BX&role=host
+```
+
+**Guest URL (same session, no role):**
+```
+http://YOUR_IP/recorder.html?session=OB-20260306-A3BX
+```
+
+### What the host can do
+
+- **Start All / Stop All** — starts or stops recording for all participants simultaneously
+- **Chapter markers** — drops a named marker at the current timestamp for post-production editing
+
+### What guests see
+
+- A "Controlled by [host]" status line appears
+- Manual start/stop buttons are dimmed but remain functional as a manual override
+- Recording starts and stops automatically when the host presses Start All / Stop All
+
+### Fallback
+
+If the server becomes unreachable (3 consecutive poll failures), guests automatically exit controlled mode and regain full manual control. Recording in progress is not interrupted.
+
+Roles are optional — if nobody uses `?role=host`, Open Booth works exactly as before.
 
 ---
 

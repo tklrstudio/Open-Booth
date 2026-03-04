@@ -109,7 +109,7 @@ Output is good when:
 - Auto-edit (silence removal, level normalisation)
 - Transcription
 - Platform publishing (push to podcast host)
-- Multi-participant coordination dashboard
+- Multi-participant coordination dashboard *(host-controlled recording and chapter markers: implemented — see DEC-OB-2026-03-04-002)*
 
 New capabilities must not compromise reliability, increase hosting cost materially, or introduce install requirements without explicit sign-off.
 

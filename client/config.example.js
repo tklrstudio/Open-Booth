@@ -25,4 +25,5 @@ const OB_CONFIG = {
   // POLL_INTERVAL_MS:  5000,    // Monitor poll interval (ms)
   // STALE_THRESHOLD_S: 30,      // Monitor: warn if no chunk in N seconds
   // DEAD_THRESHOLD_S:  90,      // Monitor: error if no chunk in N seconds
+  // COMMAND_POLL_MS:   2000,    // Host command polling interval (ms)
 };

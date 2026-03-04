@@ -14,8 +14,11 @@ Deploy to your VPS:
     5. Set SESSION_STATE_URL = 'https://your-domain.com/session-state' in monitor.html
 
 Nginx config snippet:
-    location /upload        { proxy_pass http://localhost:8080; }
-    location /session-state { proxy_pass http://localhost:8080; }
+    location /upload           { proxy_pass http://localhost:8080; }
+    location /register         { proxy_pass http://localhost:8080; }
+    location /session-command  { proxy_pass http://localhost:8080; }
+    location /session-commands { proxy_pass http://localhost:8080; }
+    location /session-state    { proxy_pass http://localhost:8080; }
 
 Requirements:
     Python 3.9+ (no external dependencies)
@@ -47,6 +50,9 @@ class SessionState:
     def __init__(self):
         self._sessions = defaultdict(lambda: {
             'startedAt': None,
+            'host': None,
+            'commands': [],
+            'chapters': [],
             'participants': {}
         })
 
@@ -77,11 +83,66 @@ class SessionState:
         except Exception:
             pass
 
+    def register_host(self, session: str, participant_id: str) -> bool:
+        """Set the host for a session. Returns False if a host is already registered."""
+        s = self._sessions[session]
+        if s['host'] is not None:
+            return False
+        s['host'] = participant_id
+        return True
+
+    def add_command(self, session: str, cmd_type: str, from_participant: str, label: str = None) -> dict:
+        """Append a command to the session. Returns the command with seq number."""
+        s = self._sessions[session]
+        seq = len(s['commands']) + 1
+        ts = int(time.time() * 1000)
+
+        cmd = {
+            'type': cmd_type,
+            'ts': ts,
+            'from': from_participant,
+            'seq': seq,
+        }
+
+        if label:
+            cmd['label'] = label
+
+        if cmd_type == 'chapter':
+            offset_ms = ts - s['startedAt'] if s['startedAt'] else 0
+            cmd['offsetMs'] = offset_ms
+            s['chapters'].append({
+                'label': label or f'Chapter {len(s["chapters"]) + 1}',
+                'ts': ts,
+                'offsetMs': offset_ms,
+            })
+
+        s['commands'].append(cmd)
+        return cmd
+
+    def get_commands_since(self, session: str, since_seq: int) -> list:
+        """Return commands with seq > since_seq."""
+        s = self._sessions.get(session)
+        if not s:
+            return []
+        return [c for c in s['commands'] if c['seq'] > since_seq]
+
+    def get_host(self, session: str) -> str:
+        """Return the host participant ID for a session, or None."""
+        s = self._sessions.get(session)
+        return s['host'] if s else None
+
     def get_session(self, session: str) -> dict:
         s = self._sessions.get(session)
         if not s:
-            return {'session': session, 'startedAt': None, 'participants': {}}
-        return {'session': session, **s}
+            return {'session': session, 'startedAt': None, 'host': None, 'chapters': [], 'commandCount': 0, 'participants': {}}
+        return {
+            'session': session,
+            'startedAt': s['startedAt'],
+            'host': s['host'],
+            'chapters': s['chapters'],
+            'commandCount': len(s['commands']),
+            'participants': s['participants'],
+        }
 
     def all_sessions(self) -> list:
         return list(self._sessions.keys())
@@ -112,6 +173,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         if parsed.path == '/session-state':
             self.handle_session_state(parsed)
+        elif parsed.path == '/session-commands':
+            self.handle_session_commands(parsed)
         elif parsed.path == '/health':
             self.handle_health()
         elif parsed.path == '/sessions':
@@ -125,6 +188,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         if parsed.path == '/upload':
             self.handle_upload()
+        elif parsed.path == '/register':
+            self.handle_register()
+        elif parsed.path == '/session-command':
+            self.handle_session_command()
         else:
             self.send_response(404)
             self.end_headers()
@@ -279,7 +346,107 @@ class Handler(http.server.BaseHTTPRequestHandler):
         sessions = state.all_sessions()
         self.respond(200, {'sessions': sessions})
 
+    # ── REGISTER ─────────────────────────────────────────────────────────────
+    def handle_register(self):
+        try:
+            body = self.read_json_body()
+            if body is None:
+                return
+
+            session     = body.get('session', '')
+            participant = body.get('participant', '')
+            role        = body.get('role', 'guest')
+
+            if not session or not participant:
+                self.respond(400, {'error': 'Missing session or participant'})
+                return
+
+            if role == 'host':
+                ok = state.register_host(session, participant)
+                if not ok:
+                    existing = state.get_host(session)
+                    self.respond(409, {'error': 'Host already registered', 'host': existing})
+                    return
+                print(f"  ★ Host registered: {participant} in {session}")
+                self.respond(200, {'ok': True, 'role': 'host', 'participant': participant})
+            else:
+                print(f"  → Guest registered: {participant} in {session}")
+                self.respond(200, {'ok': True, 'role': 'guest', 'participant': participant, 'host': state.get_host(session)})
+
+        except Exception as e:
+            print(f"  ✗ Register error: {e}")
+            self.respond(500, {'error': str(e)})
+
+    # ── SESSION COMMAND (host sends) ─────────────────────────────────────────
+    def handle_session_command(self):
+        try:
+            body = self.read_json_body()
+            if body is None:
+                return
+
+            session     = body.get('session', '')
+            participant = body.get('participant', '')
+            command     = body.get('command', '')
+            label       = body.get('label', None)
+
+            if not session or not participant or not command:
+                self.respond(400, {'error': 'Missing session, participant, or command'})
+                return
+
+            # Only the host can send commands
+            host = state.get_host(session)
+            if host != participant:
+                self.respond(403, {'error': 'Only the host can send commands'})
+                return
+
+            if command not in ('start', 'stop', 'chapter'):
+                self.respond(400, {'error': f'Unknown command: {command}'})
+                return
+
+            cmd = state.add_command(session, command, participant, label)
+            print(f"  ⚡ Command: {command}" + (f" ({label})" if label else '') + f" from {participant}")
+            self.respond(200, {'ok': True, 'command': cmd})
+
+        except Exception as e:
+            print(f"  ✗ Command error: {e}")
+            self.respond(500, {'error': str(e)})
+
+    # ── SESSION COMMANDS (participants poll) ──────────────────────────────────
+    def handle_session_commands(self, parsed):
+        qs      = parse_qs(parsed.query)
+        session = qs.get('session', [None])[0]
+        since   = qs.get('since', ['0'])[0]
+
+        if not session:
+            self.respond(400, {'error': 'Missing session parameter'})
+            return
+
+        try:
+            since_seq = int(since)
+        except ValueError:
+            since_seq = 0
+
+        commands = state.get_commands_since(session, since_seq)
+        host = state.get_host(session)
+        self.respond(200, {'commands': commands, 'host': host})
+
     # ── HELPERS ──────────────────────────────────────────────────────────────
+    def read_json_body(self) -> dict:
+        """Read and parse a JSON request body. Returns None and sends error on failure."""
+        content_type = self.headers.get('Content-Type', '')
+        content_length = int(self.headers.get('Content-Length', 0))
+
+        if 'application/json' not in content_type:
+            self.respond(400, {'error': 'Expected application/json'})
+            return None
+
+        try:
+            raw = self.rfile.read(content_length)
+            return json.loads(raw)
+        except (json.JSONDecodeError, ValueError) as e:
+            self.respond(400, {'error': f'Invalid JSON: {e}'})
+            return None
+
     def respond(self, code: int, data: dict):
         body = json.dumps(data).encode()
         self.send_response(code)
@@ -330,9 +497,12 @@ def main():
     print(f"  Port:       {args.port}")
     print(f"  Chunks dir: {CHUNKS_DIR.resolve()}")
     print(f"  Endpoints:")
-    print(f"    POST /upload          Receive chunks from recorder")
-    print(f"    GET  /session-state   Session data for monitor")
-    print(f"    GET  /health          Health check")
+    print(f"    POST /upload            Receive chunks from recorder")
+    print(f"    POST /register          Host/guest registration")
+    print(f"    POST /session-command   Host sends start/stop/chapter")
+    print(f"    GET  /session-commands  Participants poll for commands")
+    print(f"    GET  /session-state     Session data for monitor")
+    print(f"    GET  /health            Health check")
     print(f"  {'─' * 40}\n")
 
     server = http.server.HTTPServer(('0.0.0.0', args.port), Handler)

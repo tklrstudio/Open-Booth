@@ -230,6 +230,50 @@ video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); dis
 }
 .notice strong { color: var(--warn); }
 .notice code { color: var(--accent); background: rgba(0,212,255,0.08); padding: 1px 5px; }
+
+/* HOST & COORDINATION */
+.host-badge {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(255,187,51,0.15); border: 1px solid var(--warn);
+  padding: 4px 10px; font-size: 10px; letter-spacing: 2px;
+  color: var(--warn); backdrop-filter: blur(4px);
+  display: none;
+}
+.host-controls {
+  display: none; flex-direction: column; gap: 8px;
+  border: 1px solid rgba(255,187,51,0.3); padding: 12px;
+  background: rgba(255,187,51,0.03);
+}
+.host-hdr {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--warn); margin-bottom: 4px;
+}
+.host-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chapter-row { display: flex; gap: 0; }
+.chapter-input {
+  flex: 1; background: var(--bg);
+  border: 1px solid var(--border); border-right: none;
+  color: var(--text); font-family: var(--mono);
+  font-size: 12px; padding: 10px 12px;
+  letter-spacing: 1px; outline: none;
+}
+.chapter-input:focus { border-color: var(--warn); }
+.chapter-input::placeholder { color: var(--muted); font-size: 11px; }
+.btn.chapter {
+  border-color: var(--warn); color: var(--warn); cursor: pointer;
+  white-space: nowrap; padding: 10px 16px;
+}
+.btn.chapter:hover { background: var(--warn); color: #000; }
+.controlled-strip {
+  display: none;
+  padding: 10px 12px; font-size: 10px; letter-spacing: 1px;
+  color: var(--warn); border: 1px solid rgba(255,187,51,0.2);
+  background: rgba(255,187,51,0.03);
+}
+#recorderMain.controlled .controls .btn.go,
+#recorderMain.controlled .controls .btn.stop {
+  opacity: 0.5;
+}
 </style>
 </head>
 <body>
@@ -257,6 +301,7 @@ video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); dis
       <div class="rec-pill" id="recPill"><div class="rec-dot"></div> REC</div>
       <div class="timer-pill" id="timerPill">00:00:00</div>
       <div class="participant-tag" id="participantTag">—</div>
+      <div class="host-badge" id="hostBadge">HOST</div>
     </div>
 
     <div class="r-panel">
@@ -286,10 +331,24 @@ video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); dis
       <div class="s-cell"><div class="s-lbl">Network</div><div class="s-val" id="netVal">—</div></div>
     </div>
 
+    <div class="controlled-strip" id="controlledStrip"></div>
+
     <div class="controls">
       <button class="btn" id="btnStart">Start Recording</button>
       <button class="btn" id="btnStop">Stop</button>
       <button class="btn rescue" id="btnRescue">⬇ Download Local Cache (Rescue)</button>
+    </div>
+
+    <div class="host-controls" id="hostControls">
+      <div class="host-hdr">Host Controls</div>
+      <div class="host-btns">
+        <button class="btn go" id="btnStartAll">Start All</button>
+        <button class="btn" id="btnStopAll">Stop All</button>
+      </div>
+      <div class="chapter-row">
+        <input class="chapter-input" id="chapterLabel" type="text" placeholder="Chapter label (optional)" maxlength="50" autocomplete="off" spellcheck="false" />
+        <button class="btn chapter" id="btnChapter">+ Chapter</button>
+      </div>
     </div>
 
     <div class="log-wrap">
@@ -318,6 +377,7 @@ const SERVER_CHUNK_MS   = _c.SERVER_CHUNK_MS   ?? 10000;   // 10s — server upl
 const IDB_CHUNK_MS      = _c.IDB_CHUNK_MS      ?? 30000;   // 30s — local cache cadence
 const SERVER_VIDEO_KBPS = _c.SERVER_VIDEO_KBPS ?? 800;     // degraded for upload
 const LOCAL_VIDEO_KBPS  = _c.LOCAL_VIDEO_KBPS  ?? 4000;    // full quality for cache
+const COMMAND_POLL_MS   = _c.COMMAND_POLL_MS   ?? 2000;    // host command polling
 // ═══════════════════════════════════════════════
 
 // Session
@@ -351,6 +411,15 @@ let timerIv         = null;
 let startTime       = null;
 let isRecording     = false;
 let logCt           = 0;
+
+// Host / guest coordination
+const role         = params.get('role') || 'guest';
+let isHost         = role === 'host';
+let hostId         = null;
+let lastSeq        = 0;
+let pollIv         = null;
+let pollFails      = 0;
+let controlledMode = false;
 
 // ── NAME GATE ─────────────────────────────────
 const nameInput = document.getElementById('nameInput');
@@ -445,6 +514,8 @@ async function initMedia() {
     setBtn('btnStart', 'go', startRecording, 'Start Recording');
     log('ok', 'Ready');
 
+    if (UPLOAD_ENDPOINT) await register();
+
   } catch (err) {
     document.getElementById('videoOverlay').textContent = 'Permission denied';
     sv('camVal','Error','err'); sv('micVal','Error','err');
@@ -485,6 +556,7 @@ async function startRecording() {
   setBtn('btnStop', 'stop', stopRecording, 'Stop');
   timerIv = setInterval(tickTimer, 1000);
   log('ok', `Recording — dual encoder active (${SERVER_VIDEO_KBPS}kbps server / ${LOCAL_VIDEO_KBPS}kbps cache)`);
+  updateHostButtons();
 }
 
 function stopRecording() {
@@ -501,6 +573,7 @@ function finalise() {
   log('ok', 'Recording complete');
   setBtn('btnStart', 'go', startRecording, 'New Recording');
   showRescue();
+  updateHostButtons();
   updateUI();
 }
 
@@ -659,6 +732,187 @@ function log(type, msg) {
   lg.appendChild(el);
   lg.scrollTop = lg.scrollHeight;
   document.getElementById('logCt').textContent = `${++logCt} events`;
+}
+
+// ── HOST / GUEST COORDINATION ─────────────────
+function getBaseUrl() {
+  if (!UPLOAD_ENDPOINT) return null;
+  return UPLOAD_ENDPOINT.replace(/\/upload\/?$/, '');
+}
+
+async function register() {
+  const base = getBaseUrl();
+  if (!base) return;
+  try {
+    const r = await fetch(`${base}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session: sessionId, participant: participantId, role })
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      if (r.status === 409) {
+        log('warn', `Host already registered: ${data.host}`);
+        isHost = false;
+        hostId = data.host;
+        enterControlledMode(hostId);
+      } else {
+        log('err', `Registration failed: ${data.error}`);
+      }
+      return;
+    }
+    if (data.role === 'host') {
+      hostId = participantId;
+      showHostControls();
+      log('ok', 'Registered as HOST');
+    } else {
+      if (data.host) {
+        hostId = data.host;
+        enterControlledMode(hostId);
+        log('info', `Host: ${data.host} — controlled mode`);
+      } else {
+        log('info', 'Registered — no host yet');
+      }
+      startCommandPoll();
+    }
+  } catch (e) {
+    log('warn', `Registration failed: ${e.message}`);
+  }
+}
+
+function showHostControls() {
+  document.getElementById('hostBadge').style.display = 'block';
+  document.getElementById('hostControls').style.display = 'flex';
+  document.getElementById('btnStartAll').onclick = hostStartAll;
+  document.getElementById('btnChapter').onclick = hostAddChapter;
+  document.getElementById('chapterLabel').addEventListener('keydown', e => {
+    if (e.key === 'Enter') hostAddChapter();
+  });
+}
+
+function updateHostButtons() {
+  if (!isHost) return;
+  if (isRecording) {
+    setBtn('btnStartAll', '', null, 'Start All');
+    setBtn('btnStopAll', 'stop', hostStopAll, 'Stop All');
+  } else {
+    setBtn('btnStartAll', 'go', hostStartAll, 'Start All');
+    setBtn('btnStopAll', '', null, 'Stop All');
+  }
+}
+
+async function sendCommand(type, label) {
+  const base = getBaseUrl();
+  if (!base) return;
+  try {
+    const body = { session: sessionId, participant: participantId, command: type };
+    if (label) body.label = label;
+    const r = await fetch(`${base}/session-command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) {
+      const data = await r.json();
+      log('err', `Command failed: ${data.error}`);
+    }
+  } catch (e) {
+    log('err', `Command failed: ${e.message}`);
+  }
+}
+
+function hostStartAll() {
+  if (isRecording) return;
+  startRecording();
+  sendCommand('start');
+  log('ok', 'Sent START to all participants');
+}
+
+function hostStopAll() {
+  if (!isRecording) return;
+  stopRecording();
+  sendCommand('stop');
+  log('ok', 'Sent STOP to all participants');
+}
+
+function hostAddChapter() {
+  const input = document.getElementById('chapterLabel');
+  const label = input.value.trim() || null;
+  sendCommand('chapter', label);
+  input.value = '';
+  log('ok', `Chapter marker${label ? ': ' + label : ''}`);
+}
+
+function startCommandPoll() {
+  if (pollIv) return;
+  pollIv = setInterval(pollCommands, COMMAND_POLL_MS);
+}
+
+function stopCommandPoll() {
+  if (pollIv) { clearInterval(pollIv); pollIv = null; }
+}
+
+async function pollCommands() {
+  const base = getBaseUrl();
+  if (!base) return;
+  try {
+    const r = await fetch(`${base}/session-commands?session=${encodeURIComponent(sessionId)}&since=${lastSeq}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    pollFails = 0;
+
+    if (data.host && !controlledMode && !isHost) {
+      hostId = data.host;
+      enterControlledMode(hostId);
+    }
+
+    for (const cmd of data.commands) {
+      processCommand(cmd);
+      lastSeq = Math.max(lastSeq, cmd.seq);
+    }
+  } catch (e) {
+    pollFails++;
+    if (pollFails >= 3) {
+      if (controlledMode) {
+        log('warn', 'Host connection lost — manual mode');
+        exitControlledMode();
+      }
+      stopCommandPoll();
+    }
+  }
+}
+
+function processCommand(cmd) {
+  switch (cmd.type) {
+    case 'start':
+      if (!isRecording && !isHost) {
+        log('info', 'Host started recording');
+        startRecording();
+      }
+      break;
+    case 'stop':
+      if (isRecording && !isHost) {
+        log('info', 'Host stopped recording');
+        stopRecording();
+      }
+      break;
+    case 'chapter':
+      log('ok', `Chapter: ${cmd.label || 'marker'}`);
+      break;
+  }
+}
+
+function enterControlledMode(host) {
+  controlledMode = true;
+  document.getElementById('controlledStrip').style.display = 'block';
+  document.getElementById('controlledStrip').textContent = `Controlled by ${host} — manual override available`;
+  document.getElementById('recorderMain').classList.add('controlled');
+}
+
+function exitControlledMode() {
+  controlledMode = false;
+  document.getElementById('controlledStrip').style.display = 'none';
+  document.getElementById('recorderMain').classList.remove('controlled');
 }
 
 // ── UTILS ─────────────────────────────────────
