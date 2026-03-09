@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__open-brain__start_session",
+      "mcp__open-brain__log_turn",
+      "mcp__open-brain__search_memory",
+      "Bash(git:*)"
+    ]
+  }
+}
