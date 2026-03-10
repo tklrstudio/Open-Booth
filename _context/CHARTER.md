@@ -6,7 +6,7 @@
 **Created:** 2026-02-26
 **Last Updated:** 2026-02-26
 **Version:** 1.0.0
-
+**Visibility:** Open source
 ---
 
 ## Purpose
