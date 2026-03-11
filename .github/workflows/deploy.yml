@@ -1,0 +1,46 @@
+name: Deploy Open Booth
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - 'scripts/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy files
+        run: |
+          SSH_OPTS="-i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
+
+          rsync -avz -e "ssh $SSH_OPTS" \
+            client/ "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/openbooth/client/"
+
+          rsync -avz -e "ssh $SSH_OPTS" \
+            scripts/ "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/openbooth/scripts/"
+
+      - name: Restart service
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "sudo systemctl restart openbooth.service"
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
