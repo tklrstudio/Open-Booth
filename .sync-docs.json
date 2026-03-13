@@ -1,0 +1,14 @@
+{
+  "include": [
+    "docs/",
+    "_context/",
+    "temporal/"
+  ],
+  "exclude": [],
+  "doc_type_map": {
+    "docs/": "guide",
+    "_context/": "charter",
+    "temporal/decisions/": "decision",
+    "temporal/": "guide"
+  }
+}

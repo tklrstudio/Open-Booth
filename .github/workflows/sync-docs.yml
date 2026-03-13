@@ -1,0 +1,77 @@
+name: Sync Docs to Open Brain
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "_context/**"
+      - "docs/**"
+      - "temporal/**"
+  workflow_dispatch:
+    inputs:
+      full_sync:
+        description: "Full sync (ignore git diff, sync all matching files)"
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Checkout sync script from open-brain
+        uses: actions/checkout@v4
+        with:
+          repository: tklrstudio/open-brain
+          path: .open-brain
+          token: ${{ secrets.REPO_SYNC_TOKEN }}
+          sparse-checkout: scripts/sync_repo_docs_local.py
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install supabase httpx
+
+      - name: Determine changed files
+        id: changes
+        if: inputs.full_sync != true
+        run: |
+          BEFORE="${{ github.event.before }}"
+          # If before is all zeros (first push), fall back to full sync
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "full_sync=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "full_sync=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "files<<EOF"
+              git diff --name-only --diff-filter=ACMR "$BEFORE" "${{ github.sha }}" 2>/dev/null || true
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            {
+              echo "deleted<<EOF"
+              git diff --name-only --diff-filter=D "$BEFORE" "${{ github.sha }}" 2>/dev/null || true
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync docs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          ARGS="--repo-root . --repo-name ${{ github.event.repository.name }} --config .sync-docs.json"
+          if [ "${{ inputs.full_sync }}" = "true" ] || [ "${{ steps.changes.outputs.full_sync }}" = "true" ]; then
+            python .open-brain/scripts/sync_repo_docs_local.py $ARGS --full-sync
+          else
+            python .open-brain/scripts/sync_repo_docs_local.py $ARGS \
+              --changed-files "${{ steps.changes.outputs.files }}" \
+              --deleted-files "${{ steps.changes.outputs.deleted }}"
+          fi
