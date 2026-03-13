@@ -26,7 +26,7 @@ jobs:
       - name: Checkout sync script from open-brain
         uses: actions/checkout@v4
         with:
-          repository: tklrstudio/open-brain
+          repository: tklrstudio/brain-mcp
           path: .open-brain
           token: ${{ secrets.REPO_SYNC_TOKEN }}
           sparse-checkout: scripts/sync_repo_docs_local.py
