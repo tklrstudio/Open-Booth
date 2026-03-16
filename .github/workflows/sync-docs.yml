@@ -37,7 +37,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install supabase httpx
+        run: pip install supabase fastembed
 
       - name: Determine changed files
         id: changes
