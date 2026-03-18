@@ -237,3 +237,9 @@ When you want `https://` instead of `http://`:
 3. `apt install certbot python3-certbot-nginx -y`
 4. `certbot --nginx -d yourdomain.com`
 5. Update UPLOAD_ENDPOINT and SESSION_STATE_URL in `config.js` to `https://`
+
+---
+
+## How to Work Here
+
+This project operates within the [living-systems](https://github.com/tklrstudio/living-systems) constitutional framework. Start with `_context/CHARTER.md` for project boundaries, decision criteria, and governance rules.
