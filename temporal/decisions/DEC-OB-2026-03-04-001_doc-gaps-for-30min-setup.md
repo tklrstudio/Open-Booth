@@ -10,7 +10,7 @@
 <!-- Filename: DEC-OB-2026-03-04-001_doc-gaps-for-30min-setup.md -->
 
 **Created:** 2026-03-04
-**Decision Status:** Accepted
+**Decision Status:** Approved
 **Decision ID:** DEC-OB-2026-03-04-001
 **Workspace:** Open-Booth
 **Branch:** Operations
