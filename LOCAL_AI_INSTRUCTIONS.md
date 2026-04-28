@@ -29,7 +29,7 @@ Read these project-specific files:
 
 ## Enqueueing Blacksmith Tasks
 
-Use the `enqueue_task` MCP tool — never raw SQL INSERTs into `brain.blacksmith_queue`.
+Use the `enqueue_task` MCP tool — never raw SQL INSERTs into `brain.blacksmith_queue`, and never `RemoteTrigger`.
 
 **The brief must be committed and pushed to GitHub before calling `enqueue_task`.** The tool fetches the spec file from GitHub at enqueue time and fails immediately if it isn't found. This is intentional: it eliminates the race condition where Smitty would claim a task before the file was reachable.
 
