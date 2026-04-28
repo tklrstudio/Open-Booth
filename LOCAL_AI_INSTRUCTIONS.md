@@ -15,6 +15,7 @@ This is an open-source repo — the `.living-systems/` submodule is not included
 
 **Workspace code:** OB
 **Decision prefix:** DEC-OB
+**Branch strategy:** main-only
 
 ---
 
