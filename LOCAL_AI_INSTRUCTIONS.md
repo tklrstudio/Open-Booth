@@ -28,6 +28,21 @@ Read these project-specific files:
 
 ---
 
+## Implementation Gate
+
+In-session agents design, write briefs, and review results. They do not directly edit source files to implement features or fixes.
+
+**Any edit to a source file** (`.py`, `.js`, `.ts`, `.html`, `.css`, `.sql`, or equivalent) that constitutes a feature, fix, or refactor must be queued as a brief via `enqueue_task` and executed by Smitty.
+
+Narrow exceptions where direct in-session edits are acceptable without a brief:
+- Pure documentation commits (`.md` files only)
+- Single-line config or environment changes
+- Hotfixes where Jason explicitly says "just do it" in the current turn
+
+When in doubt, write the brief.
+
+---
+
 ## Enqueueing Blacksmith Tasks
 
 Use the `enqueue_task` MCP tool — never raw SQL INSERTs into `brain.blacksmith_queue`, and never `RemoteTrigger`.
