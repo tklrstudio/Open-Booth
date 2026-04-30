@@ -1,8 +1,3 @@
-# CLAUDE.md
+This file auto-loads for Claude Code.
 
-Read these files in order:
-1. `_context/CHARTER.md` — Project definition, design principles, architecture, AI collaboration rules
-
-## Open Brain
-
-Follow the MCP server's injected instructions for session management and logging.
+Use `AGENTS.md` as the neutral instruction entrypoint for this repo, then apply any machine-level Claude setup that is available in the current environment.
