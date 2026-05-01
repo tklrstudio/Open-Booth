@@ -2,7 +2,7 @@
 
 **Created:** 2026-03-11
 **Decision Status:** Proposed
-**Decision ID:** DEC-OB-2026-03-11-001
+**Decision ID:** DEC-OBO-2026-03-11-001
 **Workspace:** Open-Booth
 **Branch:** Operations
 
@@ -45,7 +45,7 @@ Manual deployment following `docs/VPS_SETUP.md`. No automation, no audit trail.
 ## Related
 
 **Standard:** `.living-systems/docs/standards/VPS_DEPLOYMENT.md`
-**Related:** DEC-OB-2026-03-11-026 (open-brain deployment — same standard)
+**Related:** DEC-OBO-2026-03-11-026 (open-brain deployment — same standard)
 
 ---
 

@@ -13,8 +13,8 @@ This is an open-source repo — the `.living-systems/` submodule is not included
 
 ## Scope
 
-**Workspace code:** OB
-**Decision prefix:** DEC-OB
+**Workspace code:** OBO
+**Decision prefix:** DEC-OBO
 branch-strategy: main-only
 
 ---

@@ -2,7 +2,7 @@
 
 **Purpose:** A reliable, low-cost, browser-based podcast recording tool for independent podcasters
 **Status:** Canonical
-**Workspace Code:** OB
+**Workspace Code:** OBO
 **Type:** Software
 **Created:** 2026-02-26
 **Last Updated:** 2026-02-26
@@ -110,7 +110,7 @@ Output is good when:
 - Auto-edit (silence removal, level normalisation)
 - Transcription
 - Platform publishing (push to podcast host)
-- Multi-participant coordination dashboard *(host-controlled recording and chapter markers: implemented — see DEC-OB-2026-03-04-002)*
+- Multi-participant coordination dashboard *(host-controlled recording and chapter markers: implemented — see DEC-OBO-2026-03-04-002)*
 
 New capabilities must not compromise reliability, increase hosting cost materially, or introduce install requirements without explicit sign-off.
 

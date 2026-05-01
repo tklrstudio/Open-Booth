@@ -7,11 +7,11 @@
 **Last Updated:** 2026-03-03
 **Version:** 1.0.0
 
-<!-- Filename: DEC-OB-2026-03-03-001_config-extraction-for-public-release.md -->
+<!-- Filename: DEC-OBO-2026-03-03-001_config-extraction-for-public-release.md -->
 
 **Created:** 2026-03-03
 **Decision Status:** Proposed
-**Decision ID:** DEC-OB-2026-03-03-001
+**Decision ID:** DEC-OBO-2026-03-03-001
 **Workspace:** Open-Booth
 **Branch:** Operations
 
@@ -137,7 +137,7 @@ Executed as planned. Server.py also updated to read `OB_PORT`, `OB_CHUNKS_DIR`, 
 **Artefacts:**
 - Created: `client/config.example.js`
 - Created: `.env.example`
-- Created: `temporal/decisions/00-proposed/DEC-OB-2026-03-03-001_config-extraction-for-public-release.md`
+- Created: `temporal/decisions/00-proposed/DEC-OBO-2026-03-03-001_config-extraction-for-public-release.md`
 - Modified: `client/recorder.html` — config loading, branding, session prefix, IDB name
 - Modified: `client/monitor.html` — config loading, notice text
 - Modified: `scripts/server.py` — environment variable support

@@ -7,11 +7,11 @@
 **Last Updated:** 2026-03-04
 **Version:** 1.0.0
 
-<!-- Filename: DEC-OB-2026-03-04-001_doc-gaps-for-30min-setup.md -->
+<!-- Filename: DEC-OBO-2026-03-04-001_doc-gaps-for-30min-setup.md -->
 
 **Created:** 2026-03-04
 **Decision Status:** Approved
-**Decision ID:** DEC-OB-2026-03-04-001
+**Decision ID:** DEC-OBO-2026-03-04-001
 **Workspace:** Open-Booth
 **Branch:** Operations
 
@@ -19,7 +19,7 @@
 
 ## Problem
 
-After publishing Open Booth publicly and extracting config (DEC-OB-2026-03-03-001), we assessed the repo against two charter success criteria:
+After publishing Open Booth publicly and extracting config (DEC-OBO-2026-03-03-001), we assessed the repo against two charter success criteria:
 
 1. "A podcaster with no technical background can self-host Open Booth in under 30 minutes using the docs (or with AI assistance from the docs)"
 2. "The repo README and docs are clear enough that an AI assistant can guide a non-technical user through setup without additional context"
@@ -163,7 +163,7 @@ None — straightforward documentation fix, scope held
 - Open Booth public release (sizing: Minor — documentation only)
 
 **Decisions:**
-- **Related to:** DEC-OB-2026-03-03-001 (config extraction — this decision closes the remaining gaps from that release)
+- **Related to:** DEC-OBO-2026-03-03-001 (config extraction — this decision closes the remaining gaps from that release)
 
 ---
 

@@ -1,7 +1,7 @@
 # Decision: Code Decomposition — Open-Booth
 
 **Decision Status:** Proposed
-**Decision ID:** DEC-OB-2026-04-14-120000
+**Decision ID:** DEC-OBO-2026-04-14-120000
 **Workspace:** open-booth
 **Branch:** Operations
 **Created:** 2026-04-14
