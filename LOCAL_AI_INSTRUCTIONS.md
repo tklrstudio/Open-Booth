@@ -4,8 +4,8 @@
 **Status:** Canonical
 **Scope:** This workspace only
 **Created:** 2026-03-18
-**Last Updated:** 2026-04-28
-**Version:** 1.0.0
+**Last Updated:** 2026-05-04
+**Version:** 1.0.1
 
 This is an open-source repo — the `.living-systems/` submodule is not included. Use this file and `_context/CHARTER.md` as primary context.
 
@@ -53,6 +53,18 @@ If the brief isn't on GitHub yet (e.g. you're working locally), pass `spec_conte
 ```
 enqueue_task(task_name=..., spec_path=..., repo=..., spec_content="<brief text>")
 ```
+
+### ⚠️ repo slug — always use the full `org/repo` format
+
+The `repo` parameter **must always be the full GitHub slug**, e.g. `tklrstudio/Open-Booth`.
+
+**Never pass a bare repo name** like `Open-Booth`. Smitty constructs the clone URL directly from this field — a bare name produces `https://github.com/Open-Booth.git` (missing org) and the task fails immediately.
+
+| Correct ✅ | Wrong ❌ |
+|---|---|
+| `tklrstudio/Open-Booth` | `Open-Booth` |
+
+This rule applies to both `repo` and `spec_repo` parameters.
 
 ---
 
